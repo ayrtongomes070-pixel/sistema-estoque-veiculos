@@ -1,0 +1,6 @@
+# Copie este arquivo para "db.properties" (na mesma pasta) e preencha com seus dados.
+# O db.properties real NÃO deve ser enviado ao Git (já está no .gitignore).
+
+db.url=jdbc:mysql://localhost:3306/estoque_veiculos
+db.usuario=root
+db.senha=sua_senha_aqui
