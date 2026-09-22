@@ -36,4 +36,6 @@ Classes e objetos, encapsulamento, herança, polimorfismo, abstração, interfac
 
 ## Autores
 
-- Ayrton
+- Ayrton Gomes 
+- Nelson Spinelli
+
