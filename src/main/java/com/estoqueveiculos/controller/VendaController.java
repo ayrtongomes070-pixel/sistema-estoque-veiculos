@@ -1,18 +1,35 @@
 package com.estoqueveiculos.controller;
 
+import com.estoqueveiculos.exception.VeiculoNaoEncontradoException;
+import com.estoqueveiculos.model.Cliente;
+import com.estoqueveiculos.model.Vendedor;
+import com.estoqueveiculos.model.Venda;
 import com.estoqueveiculos.service.VendaService;
 
+import java.time.LocalDate;
+import java.util.List;
+
 /**
- * Controller que liga a tela de venda (venda.fxml) ao VendaService.
- * TODO: anotar campos com @FXML conforme os componentes do FXML forem criados.
+ * Controller que liga a tela de venda (venda.fxml, quando existir) ao VendaService.
  */
 public class VendaController {
 
-    private VendaService vendaService;
+    private final VendaService vendaService;
 
-    public void setVendaService(VendaService vendaService) {
+    public VendaController(VendaService vendaService) {
         this.vendaService = vendaService;
     }
 
-    // TODO: métodos de inicialização e ações de botões (registrar venda, listar vendas)
+    public Venda registrarVenda(String chassiVeiculo, Cliente cliente, Vendedor vendedor)
+            throws VeiculoNaoEncontradoException {
+        return vendaService.registrarVenda(chassiVeiculo, cliente, vendedor);
+    }
+
+    public List<Venda> listarVendas() {
+        return vendaService.listarVendas();
+    }
+
+    public double totalVendidoNoPeriodo(LocalDate inicio, LocalDate fim) {
+        return vendaService.totalVendidoNoPeriodo(inicio, fim);
+    }
 }
