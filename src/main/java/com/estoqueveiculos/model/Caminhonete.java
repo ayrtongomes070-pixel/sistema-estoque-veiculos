@@ -7,6 +7,9 @@ public class Caminhonete extends Veiculo {
     public Caminhonete(String chassi, String modelo, String marca, int anoFabricacao,
                         double preco, double capacidadeCargaKg) {
         super(chassi, modelo, marca, anoFabricacao, preco);
+        if (capacidadeCargaKg <= 0) {
+            throw new IllegalArgumentException("Capacidade de carga deve ser maior que zero.");
+        }
         this.capacidadeCargaKg = capacidadeCargaKg;
     }
 
@@ -22,5 +25,10 @@ public class Caminhonete extends Veiculo {
 
     public void setCapacidadeCargaKg(double capacidadeCargaKg) {
         this.capacidadeCargaKg = capacidadeCargaKg;
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + " - Carga: " + capacidadeCargaKg + "kg";
     }
 }

@@ -9,7 +9,9 @@ import com.estoqueveiculos.service.VendaService;
 import java.time.LocalDate;
 import java.util.List;
 
-
+/**
+ * Controller que liga a tela de venda (venda.fxml, quando existir) ao VendaService.
+ */
 public class VendaController {
 
     private final VendaService vendaService;
