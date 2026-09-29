@@ -4,7 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Representa o estoque de veículos de uma loja.
+ * Representa o estoque de veículos de uma loja (versão em memória).
+ * Observação: para persistência real, ver repository.IVeiculoRepository.
  */
 public class Estoque {
 

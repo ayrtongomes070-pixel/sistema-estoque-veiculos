@@ -2,17 +2,25 @@ package com.estoqueveiculos.model;
 
 import java.time.LocalDate;
 
+/**
+ * Representa a transação de venda de um veículo.
+ * Imutável após a criação (sem setters), conforme modelagem da Etapa 2:
+ * um registro de venda já concluída não deve ser alterado.
+ */
 public class Venda {
 
-    private int id;
-    private Veiculo veiculo;
-    private Cliente cliente;
-    private Vendedor vendedor;
-    private LocalDate dataVenda;
-    private double valorFinal;
+    private final int id;
+    private final Veiculo veiculo;
+    private final Cliente cliente;
+    private final Vendedor vendedor;
+    private final LocalDate dataVenda;
+    private final double valorFinal;
 
     public Venda(int id, Veiculo veiculo, Cliente cliente, Vendedor vendedor,
                  LocalDate dataVenda) {
+        if (veiculo == null || cliente == null || vendedor == null) {
+            throw new IllegalArgumentException("Veículo, cliente e vendedor são obrigatórios.");
+        }
         this.id = id;
         this.veiculo = veiculo;
         this.cliente = cliente;
@@ -25,47 +33,29 @@ public class Venda {
         return id;
     }
 
-    public void setId(int id) {
-        this.id = id;
-    }
-
     public Veiculo getVeiculo() {
         return veiculo;
-    }
-
-    public void setVeiculo(Veiculo veiculo) {
-        this.veiculo = veiculo;
     }
 
     public Cliente getCliente() {
         return cliente;
     }
 
-    public void setCliente(Cliente cliente) {
-        this.cliente = cliente;
-    }
-
     public Vendedor getVendedor() {
         return vendedor;
-    }
-
-    public void setVendedor(Vendedor vendedor) {
-        this.vendedor = vendedor;
     }
 
     public LocalDate getDataVenda() {
         return dataVenda;
     }
 
-    public void setDataVenda(LocalDate dataVenda) {
-        this.dataVenda = dataVenda;
-    }
-
     public double getValorFinal() {
         return valorFinal;
     }
 
-    public void setValorFinal(double valorFinal) {
-        this.valorFinal = valorFinal;
+    @Override
+    public String toString() {
+        return String.format("Venda #%d - %s -> %s (R$ %.2f) em %s",
+                id, veiculo.getChassi(), cliente.getNome(), valorFinal, dataVenda);
     }
 }

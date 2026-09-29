@@ -21,6 +21,14 @@ public class EstoqueService {
         veiculoRepository.salvar(veiculo);
     }
 
+    public void atualizarVeiculo(Veiculo veiculo) throws VeiculoNaoEncontradoException {
+        veiculoRepository.atualizar(veiculo);
+    }
+
+    public double valorTotalEstoque() {
+        return listarVeiculos().stream().mapToDouble(Veiculo::getPreco).sum();
+    }
+
     public List<Veiculo> listarVeiculos() {
         return veiculoRepository.listarTodos();
     }

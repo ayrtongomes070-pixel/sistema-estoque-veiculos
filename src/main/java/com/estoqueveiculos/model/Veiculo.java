@@ -13,6 +13,12 @@ public abstract class Veiculo {
     private double preco;
 
     public Veiculo(String chassi, String modelo, String marca, int anoFabricacao, double preco) {
+        if (chassi == null || chassi.isBlank()) {
+            throw new IllegalArgumentException("Chassi não pode ser vazio.");
+        }
+        if (preco < 0) {
+            throw new IllegalArgumentException("Preço não pode ser negativo.");
+        }
         this.chassi = chassi;
         this.modelo = modelo;
         this.marca = marca;
@@ -60,6 +66,9 @@ public abstract class Veiculo {
     }
 
     public void setPreco(double preco) {
+        if (preco < 0) {
+            throw new IllegalArgumentException("Preço não pode ser negativo.");
+        }
         this.preco = preco;
     }
 
@@ -67,5 +76,17 @@ public abstract class Veiculo {
     public String toString() {
         return String.format("%s %s (%d) - Chassi: %s - R$ %.2f",
                 marca, modelo, anoFabricacao, chassi, preco);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Veiculo)) return false;
+        return chassi.equals(((Veiculo) o).chassi);
+    }
+
+    @Override
+    public int hashCode() {
+        return chassi.hashCode();
     }
 }

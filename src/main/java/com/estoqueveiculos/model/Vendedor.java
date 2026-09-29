@@ -1,13 +1,21 @@
 package com.estoqueveiculos.model;
 
+/**
+ * Representa o vendedor responsável por registrar vendas.
+ * Imutável após a criação (sem setters), conforme modelagem da Etapa 2.
+ * A senha não é exposta publicamente — fica encapsulada dentro da classe.
+ */
 public class Vendedor {
 
-    private int id;
-    private String nome;
-    private String login;
-    private String senha;
+    private final int id;
+    private final String nome;
+    private final String login;
+    private final String senha;
 
     public Vendedor(int id, String nome, String login, String senha) {
+        if (login == null || login.isBlank()) {
+            throw new IllegalArgumentException("Login não pode ser vazio.");
+        }
         this.id = id;
         this.nome = nome;
         this.login = login;
@@ -18,36 +26,28 @@ public class Vendedor {
         return id;
     }
 
-    public void setId(int id) {
-        this.id = id;
-    }
-
     public String getNome() {
         return nome;
-    }
-
-    public void setNome(String nome) {
-        this.nome = nome;
     }
 
     public String getLogin() {
         return login;
     }
 
-    public void setLogin(String login) {
-        this.login = login;
-    }
-
-    public String getSenha() {
-        return senha;
-    }
-
-    public void setSenha(String senha) {
-        this.senha = senha;
-    }
-
     @Override
     public String toString() {
         return nome + " (login: " + login + ")";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Vendedor)) return false;
+        return login.equals(((Vendedor) o).login);
+    }
+
+    @Override
+    public int hashCode() {
+        return login.hashCode();
     }
 }
