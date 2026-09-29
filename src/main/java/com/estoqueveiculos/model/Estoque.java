@@ -1,6 +1,7 @@
 package com.estoqueveiculos.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -16,6 +17,9 @@ public class Estoque {
     }
 
     public void adicionar(Veiculo veiculo) {
+        if (veiculo == null) {
+            throw new IllegalArgumentException("Veículo não pode ser nulo.");
+        }
         veiculos.add(veiculo);
     }
 
@@ -24,7 +28,7 @@ public class Estoque {
     }
 
     public List<Veiculo> getVeiculos() {
-        return veiculos;
+        return Collections.unmodifiableList(new ArrayList<>(veiculos));
     }
 
     public int quantidade() {

@@ -24,6 +24,9 @@ public class Caminhonete extends Veiculo {
     }
 
     public void setCapacidadeCargaKg(double capacidadeCargaKg) {
+        if (!Double.isFinite(capacidadeCargaKg) || capacidadeCargaKg <= 0) {
+            throw new IllegalArgumentException("Capacidade de carga deve ser um valor válido e maior que zero.");
+        }
         this.capacidadeCargaKg = capacidadeCargaKg;
     }
 

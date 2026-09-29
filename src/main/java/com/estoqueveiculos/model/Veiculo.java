@@ -13,12 +13,11 @@ public abstract class Veiculo {
     private double preco;
 
     public Veiculo(String chassi, String modelo, String marca, int anoFabricacao, double preco) {
-        if (chassi == null || chassi.isBlank()) {
-            throw new IllegalArgumentException("Chassi não pode ser vazio.");
-        }
-        if (preco < 0) {
-            throw new IllegalArgumentException("Preço não pode ser negativo.");
-        }
+        validarChassi(chassi);
+        validarTexto(modelo, "Modelo");
+        validarTexto(marca, "Marca");
+        validarAno(anoFabricacao);
+        validarPreco(preco);
         this.chassi = chassi;
         this.modelo = modelo;
         this.marca = marca;
@@ -34,6 +33,7 @@ public abstract class Veiculo {
     }
 
     public void setChassi(String chassi) {
+        validarChassi(chassi);
         this.chassi = chassi;
     }
 
@@ -42,6 +42,7 @@ public abstract class Veiculo {
     }
 
     public void setModelo(String modelo) {
+        validarTexto(modelo, "Modelo");
         this.modelo = modelo;
     }
 
@@ -50,6 +51,7 @@ public abstract class Veiculo {
     }
 
     public void setMarca(String marca) {
+        validarTexto(marca, "Marca");
         this.marca = marca;
     }
 
@@ -58,6 +60,7 @@ public abstract class Veiculo {
     }
 
     public void setAnoFabricacao(int anoFabricacao) {
+        validarAno(anoFabricacao);
         this.anoFabricacao = anoFabricacao;
     }
 
@@ -66,10 +69,24 @@ public abstract class Veiculo {
     }
 
     public void setPreco(double preco) {
-        if (preco < 0) {
-            throw new IllegalArgumentException("Preço não pode ser negativo.");
-        }
+        validarPreco(preco);
         this.preco = preco;
+    }
+
+    private static void validarChassi(String chassi) {
+        if (chassi == null || chassi.isBlank()) throw new IllegalArgumentException("Chassi não pode ser vazio.");
+    }
+
+    private static void validarTexto(String valor, String campo) {
+        if (valor == null || valor.isBlank()) throw new IllegalArgumentException(campo + " não pode ser vazio.");
+    }
+
+    private static void validarAno(int ano) {
+        if (ano <= 0) throw new IllegalArgumentException("Ano de fabricação deve ser maior que zero.");
+    }
+
+    private static void validarPreco(double preco) {
+        if (!Double.isFinite(preco) || preco < 0) throw new IllegalArgumentException("Preço deve ser um valor válido e não negativo.");
     }
 
     @Override

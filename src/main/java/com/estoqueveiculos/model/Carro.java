@@ -24,6 +24,9 @@ public class Carro extends Veiculo {
     }
 
     public void setNumeroPortas(int numeroPortas) {
+        if (numeroPortas <= 0) {
+            throw new IllegalArgumentException("Número de portas deve ser maior que zero.");
+        }
         this.numeroPortas = numeroPortas;
     }
 
