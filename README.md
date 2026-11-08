@@ -10,8 +10,10 @@ Sistema de gerenciamento de estoque de veículos para lojas de automóveis. Nest
 
 - Java 17
 - JavaFX (interface gráfica)
-- Repositório em memória nesta primeira versão (sem configuração de banco)
-- JDBC + MySQL planejado para a próxima etapa
+- JavaFX para a interface gráfica
+- Arquivo local `dados/veiculos.properties` para manter o estoque entre execuções
+- Repositório em memória disponível para testes
+- JDBC + MySQL permanece como implementação planejada; ainda não está conectado à aplicação
 - Maven (gerenciador de dependências)
 
 ## Arquitetura
@@ -19,7 +21,7 @@ Sistema de gerenciamento de estoque de veículos para lojas de automóveis. Nest
 MVC (Model, View, Controller), organizado em camadas:
 
 - `model` — entidades (Veiculo, Carro, Caminhonete, Cliente, Vendedor, Venda, Estoque)
-- `repository` — acesso a dados (interface `IVeiculoRepository` + implementação JDBC)
+- `repository` — acesso a dados (interface `IVeiculoRepository` + implementações em arquivo, memória e JDBC ainda não concluída)
 - `service` — regras de negócio
 - `controller` — liga a interface JavaFX aos Services
 - `exception` — exceções customizadas (ex: `VeiculoNaoEncontradoException`)
@@ -35,15 +37,20 @@ Classes e objetos, encapsulamento, herança, polimorfismo, abstração, interfac
 - Cadastro de carros e caminhonetes
 - Edição e remoção de veículos
 - Resumo com quantidade e valor total do estoque
-- Registros de demonstração carregados ao iniciar
+- Registros de demonstração adicionados na primeira execução
+- Estoque salvo automaticamente em arquivo e carregado nas próximas execuções
 
-Os dados são mantidos em memória durante a execução. Ao fechar e abrir o programa, os registros voltam aos exemplos iniciais. A integração com MySQL fica para uma próxima etapa.
+O arquivo `dados/veiculos.properties` é criado na pasta de execução do projeto. Ele é local e está ignorado pelo Git para não enviar os dados de demonstração ou da máquina ao repositório.
 
 ## Como rodar
 
-1. Instale o Java 17 e o Maven.
-2. Na pasta do projeto, rode `mvn clean install` para instalar as dependências.
+1. Instale um JDK 17 ou superior e o Maven 3.9 ou superior.
+2. Na pasta do projeto, rode `mvn clean test` para compilar e executar os testes unitários.
 3. Rode `mvn javafx:run` para iniciar a aplicação.
+
+## Testes
+
+Os testes JUnit cobrem o repositório em memória e em arquivo, as operações do estoque, o registro de vendas e os casos de erro. Execute-os com `mvn test`.
 
 ## Autores
 

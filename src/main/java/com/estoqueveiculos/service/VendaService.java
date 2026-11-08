@@ -20,6 +20,7 @@ public class VendaService {
     private int proximoId = 1;
 
     public VendaService(IVeiculoRepository veiculoRepository) {
+        if (veiculoRepository == null) throw new IllegalArgumentException("Repositório de veículos é obrigatório.");
         this.veiculoRepository = veiculoRepository;
     }
 

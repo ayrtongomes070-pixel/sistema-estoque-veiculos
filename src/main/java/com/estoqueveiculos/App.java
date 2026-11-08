@@ -1,10 +1,12 @@
 package com.estoqueveiculos;
 
 import com.estoqueveiculos.controller.EstoqueController;
+import com.estoqueveiculos.exception.ErroPersistenciaException;
+import com.estoqueveiculos.exception.VeiculoNaoEncontradoException;
 import com.estoqueveiculos.model.Caminhonete;
 import com.estoqueveiculos.model.Carro;
 import com.estoqueveiculos.model.Veiculo;
-import com.estoqueveiculos.repository.VeiculoRepositoryMemoria;
+import com.estoqueveiculos.repository.VeiculoRepositoryArquivo;
 import com.estoqueveiculos.service.EstoqueService;
 import javafx.application.Application;
 import javafx.beans.property.ReadOnlyStringWrapper;
@@ -18,19 +20,30 @@ import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
 import java.text.NumberFormat;
+import java.nio.file.Path;
+import java.nio.file.Files;
 import java.util.Locale;
 import java.util.Optional;
 
 /** Aplicação desktop JavaFX para gerenciamento básico de veículos. */
 public class App extends Application {
-    private final EstoqueController controller = new EstoqueController(new EstoqueService(new VeiculoRepositoryMemoria()));
+    private EstoqueController controller;
     private final TableView<Veiculo> tabela = new TableView<>();
     private final Label quantidade = new Label("0");
     private final Label valor = new Label("R$ 0,00");
     private final NumberFormat moeda = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR"));
 
     @Override public void start(Stage stage) {
-        carregarExemplos();
+        try {
+            Path arquivoEstoque = Path.of("dados", "veiculos.properties");
+            boolean primeiraExecucao = Files.notExists(arquivoEstoque);
+            var repositorio = new VeiculoRepositoryArquivo(arquivoEstoque);
+            controller = new EstoqueController(new EstoqueService(repositorio));
+            if (primeiraExecucao) carregarExemplos();
+        } catch (ErroPersistenciaException ex) {
+            mostrarErro("Não foi possível abrir o estoque", ex.getMessage());
+            return;
+        }
         BorderPane root = new BorderPane();
         root.setTop(cabecalho());
         root.setCenter(conteudo());
@@ -83,7 +96,7 @@ public class App extends Application {
     }
 
     private void configurarTabela() {
-        tabela.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        tabela.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         tabela.setPlaceholder(new Label("Nenhum veículo encontrado. Cadastre o primeiro veículo."));
         tabela.setPrefHeight(370);
         tabela.getColumns().setAll(coluna("TIPO", v -> v instanceof Carro ? "Carro" : "Caminhonete", 105),
@@ -122,10 +135,18 @@ public class App extends Application {
             if (bt != salvar) return null;
             try { String placaChassi = chassi.getText().trim(); int anoNum = Integer.parseInt(ano.getText().trim()); double precoNum = Double.parseDouble(preco.getText().trim().replace(".", "").replace(',', '.'));
                 return tipo.getValue().equals("Carro") ? new Carro(placaChassi, modelo.getText().trim(), marca.getText().trim(), anoNum, precoNum, Integer.parseInt(detalhe.getText().trim())) : new Caminhonete(placaChassi, modelo.getText().trim(), marca.getText().trim(), anoNum, precoNum, Double.parseDouble(detalhe.getText().trim().replace(',', '.')));
-            } catch (RuntimeException ex) { aviso("Confira os campos numéricos. Ano, preço e detalhes precisam ser válidos."); return null; }
+            } catch (IllegalArgumentException ex) { aviso(ex.getMessage()); return null; }
         });
         Optional<Veiculo> resultado = dialog.showAndWait();
-        resultado.ifPresent(v -> { try { if (atual == null) controller.cadastrarVeiculo(v); else controller.atualizarVeiculo(v); atualizarTabela(""); } catch (RuntimeException | com.estoqueveiculos.exception.VeiculoNaoEncontradoException ex) { aviso(ex.getMessage()); } });
+        resultado.ifPresent(v -> {
+            try {
+                if (atual == null) controller.cadastrarVeiculo(v);
+                else controller.atualizarVeiculo(v);
+                atualizarTabela("");
+            } catch (IllegalArgumentException | ErroPersistenciaException | VeiculoNaoEncontradoException ex) {
+                mostrarErro("Não foi possível salvar o veículo", ex.getMessage());
+            }
+        });
     }
 
     private TextField campo(String texto) { TextField f = new TextField(texto); f.setPrefWidth(260); return f; }
@@ -133,9 +154,23 @@ public class App extends Application {
     private void removerSelecionado() {
         Veiculo v = tabela.getSelectionModel().getSelectedItem(); if (v == null) { aviso("Selecione um veículo na tabela."); return; }
         Alert confirmacao = new Alert(Alert.AlertType.CONFIRMATION, "Remover " + v.getMarca() + " " + v.getModelo() + " do estoque?", ButtonType.CANCEL, ButtonType.OK);
-        confirmacao.setHeaderText("Confirmar remoção"); confirmacao.showAndWait().filter(b -> b == ButtonType.OK).ifPresent(b -> { try { controller.removerVeiculo(v.getChassi()); atualizarTabela(""); } catch (Exception ex) { aviso(ex.getMessage()); } });
+        confirmacao.setHeaderText("Confirmar remoção");
+        confirmacao.showAndWait().filter(b -> b == ButtonType.OK).ifPresent(b -> {
+            try {
+                controller.removerVeiculo(v.getChassi());
+                atualizarTabela("");
+            } catch (ErroPersistenciaException | VeiculoNaoEncontradoException ex) {
+                mostrarErro("Não foi possível remover o veículo", ex.getMessage());
+            }
+        });
     }
     private void aviso(String mensagem) { new Alert(Alert.AlertType.WARNING, mensagem, ButtonType.OK).showAndWait(); }
+    private void mostrarErro(String titulo, String mensagem) {
+        Alert alerta = new Alert(Alert.AlertType.ERROR, mensagem, ButtonType.OK);
+        alerta.setTitle("Erro");
+        alerta.setHeaderText(titulo);
+        alerta.showAndWait();
+    }
     private void carregarExemplos() {
         controller.cadastrarVeiculo(new Carro("9BWZZZ377VT004251", "Polo", "Volkswagen", 2023, 89900, 4));
         controller.cadastrarVeiculo(new Carro("9BGKS48U0FG123456", "Onix", "Chevrolet", 2022, 75900, 4));

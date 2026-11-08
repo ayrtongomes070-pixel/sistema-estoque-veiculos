@@ -32,3 +32,6 @@ src/main/resources/db.properties
 
 # Logs
 *.log
+
+# Dados locais gerados durante a execução
+/dados/veiculos.properties

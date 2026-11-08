@@ -13,6 +13,7 @@ public class VeiculoRepositoryMemoria implements IVeiculoRepository {
     private final Map<String, Veiculo> veiculos = new LinkedHashMap<>();
 
     @Override public void salvar(Veiculo veiculo) {
+        if (veiculo == null) throw new IllegalArgumentException("Veículo não pode ser nulo.");
         if (veiculos.containsKey(veiculo.getChassi())) {
             throw new IllegalArgumentException("Já existe um veículo com esse chassi.");
         }

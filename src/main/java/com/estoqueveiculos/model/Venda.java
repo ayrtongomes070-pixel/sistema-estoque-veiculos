@@ -18,8 +18,8 @@ public class Venda {
 
     public Venda(int id, Veiculo veiculo, Cliente cliente, Vendedor vendedor,
                  LocalDate dataVenda) {
-        if (veiculo == null || cliente == null || vendedor == null) {
-            throw new IllegalArgumentException("Veículo, cliente e vendedor são obrigatórios.");
+        if (veiculo == null || cliente == null || vendedor == null || dataVenda == null) {
+            throw new IllegalArgumentException("Veículo, cliente, vendedor e data da venda são obrigatórios.");
         }
         this.id = id;
         this.veiculo = veiculo;
