@@ -10,7 +10,6 @@ Sistema de gerenciamento de estoque de veículos para lojas de automóveis. Nest
 
 - Java 17
 - JavaFX (interface gráfica)
-- JavaFX para a interface gráfica
 - Arquivo local `dados/veiculos.properties` para manter o estoque entre execuções
 - Repositório em memória disponível para testes
 - JDBC + MySQL permanece como implementação planejada; ainda não está conectado à aplicação
@@ -41,6 +40,28 @@ Classes e objetos, encapsulamento, herança, polimorfismo, abstração, interfac
 - Estoque salvo automaticamente em arquivo e carregado nas próximas execuções
 
 O arquivo `dados/veiculos.properties` é criado na pasta de execução do projeto. Ele é local e está ignorado pelo Git para não enviar os dados de demonstração ou da máquina ao repositório.
+
+## Requisitos funcionais
+
+- **RF01:** Cadastrar veículos dos tipos carro e caminhonete, informando chassi, marca, modelo, ano, preço e os dados específicos de cada tipo.
+- **RF02:** Listar os veículos cadastrados no estoque.
+- **RF03:** Pesquisar veículos por marca, modelo ou chassi.
+- **RF04:** Editar os dados de um veículo cadastrado.
+- **RF05:** Remover um veículo do estoque após confirmação do usuário.
+- **RF06:** Exibir a quantidade de veículos e o valor total do estoque.
+- **RF07:** Salvar alterações no arquivo local e recuperar os veículos ao iniciar o sistema novamente.
+- **RF08:** Validar os dados informados e avisar o usuário quando houver campos inválidos ou uma operação não puder ser concluída.
+
+## Requisitos não funcionais
+
+- **RNF01:** O sistema deve ser implementado em Java e oferecer interface gráfica desktop com JavaFX.
+- **RNF02:** O projeto deve ser compilável e executável com JDK 17 ou superior e Maven 3.9 ou superior.
+- **RNF03:** Os dados do estoque devem ser armazenados localmente em `dados/veiculos.properties`, sem exigir configuração de banco de dados nesta versão.
+- **RNF04:** O código deve manter separação de responsabilidades entre modelos, controllers, serviços e repositórios.
+- **RNF05:** As entidades devem aplicar encapsulamento e validar atributos para preservar a consistência dos dados.
+- **RNF06:** As operações principais devem ter testes unitários com JUnit 5.
+- **RNF07:** Falhas de leitura e gravação do arquivo devem gerar mensagens compreensíveis, sem descartar silenciosamente os dados.
+- **RNF08:** O arquivo local de dados deve permanecer fora do controle de versão para não misturar dados de execução com os arquivos do projeto.
 
 ## Como rodar
 
