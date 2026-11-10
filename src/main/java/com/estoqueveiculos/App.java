@@ -2,16 +2,17 @@ package com.estoqueveiculos;
 
 import com.estoqueveiculos.controller.EstoqueController;
 import com.estoqueveiculos.exception.ErroPersistenciaException;
+import com.estoqueveiculos.exception.VeiculoDuplicadoException;
 import com.estoqueveiculos.exception.VeiculoNaoEncontradoException;
 import com.estoqueveiculos.model.Caminhonete;
 import com.estoqueveiculos.model.Carro;
 import com.estoqueveiculos.model.Veiculo;
 import com.estoqueveiculos.repository.VeiculoRepositoryArquivo;
 import com.estoqueveiculos.service.EstoqueService;
+import com.estoqueveiculos.util.ConversorNumero;
 import javafx.application.Application;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
-import javafx.collections.transformation.FilteredList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -31,6 +32,8 @@ public class App extends Application {
     private final TableView<Veiculo> tabela = new TableView<>();
     private final Label quantidade = new Label("0");
     private final Label valor = new Label("R$ 0,00");
+    private final Label marcas = new Label("0");
+    private final TextField busca = new TextField();
     private final NumberFormat moeda = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR"));
 
     @Override public void start(Stage stage) {
@@ -48,7 +51,7 @@ public class App extends Application {
         root.setTop(cabecalho());
         root.setCenter(conteudo());
         root.setStyle("-fx-background-color: #f3f6fa; -fx-font-family: 'Arial';");
-        atualizarTabela("");
+        atualizarTabela();
         Scene scene = new Scene(root, 1120, 720);
         stage.setTitle("AutoStock | Estoque de veículos");
         stage.setMinWidth(900);
@@ -72,9 +75,9 @@ public class App extends Application {
         Label titulo = new Label("Visão geral"); titulo.setStyle("-fx-font-size: 25px; -fx-font-weight: bold; -fx-text-fill: #172b46;");
         Label subtitulo = new Label("Acompanhe e gerencie os veículos disponíveis no pátio."); subtitulo.setStyle("-fx-text-fill: #708098; -fx-font-size: 13px;");
         VBox intro = new VBox(6, titulo, subtitulo);
-        HBox cards = new HBox(14, card("VEÍCULOS CADASTRADOS", quantidade, "Unidades no estoque"), card("VALOR EM ESTOQUE", valor, "Soma dos preços cadastrados"));
-        TextField busca = new TextField(); busca.setPromptText("Buscar por marca, modelo ou chassi..."); busca.setPrefWidth(340);
-        busca.textProperty().addListener((o, anterior, texto) -> atualizarTabela(texto));
+        HBox cards = new HBox(14, card("VEÍCULOS CADASTRADOS", quantidade, "Unidades no estoque"), card("VALOR EM ESTOQUE", valor, "Soma dos preços cadastrados"), card("MARCAS", marcas, "Marcas diferentes no estoque"));
+        busca.setPromptText("Buscar por marca, modelo ou chassi..."); busca.setPrefWidth(340);
+        busca.textProperty().addListener((o, anterior, texto) -> atualizarTabela());
         Button novo = new Button("＋  Cadastrar veículo"); novo.setDefaultButton(true); novo.setStyle(botaoPrimario());
         novo.setOnAction(e -> abrirFormulario(null));
         HBox ferramentas = new HBox(12, busca, new Region(), novo); HBox.setHgrow(ferramentas.getChildren().get(1), Priority.ALWAYS); ferramentas.setAlignment(Pos.CENTER_LEFT);
@@ -99,11 +102,11 @@ public class App extends Application {
         tabela.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         tabela.setPlaceholder(new Label("Nenhum veículo encontrado. Cadastre o primeiro veículo."));
         tabela.setPrefHeight(370);
-        tabela.getColumns().setAll(coluna("TIPO", v -> v instanceof Carro ? "Carro" : "Caminhonete", 105),
+        tabela.getColumns().setAll(coluna("TIPO", Veiculo::getTipo, 105),
                 coluna("MARCA / MODELO", v -> v.getMarca() + " " + v.getModelo(), 230),
                 coluna("ANO", v -> String.valueOf(v.getAnoFabricacao()), 75),
                 coluna("CHASSI", Veiculo::getChassi, 190),
-                coluna("DETALHES", v -> v instanceof Carro c ? c.getNumeroPortas() + " portas" : String.format(Locale.forLanguageTag("pt-BR"), "%.0f kg", ((Caminhonete) v).getCapacidadeCargaKg()), 140),
+                coluna("DETALHES", Veiculo::getDescricaoDetalhe, 140),
                 coluna("PREÇO", v -> moeda.format(v.getPreco()), 130));
     }
 
@@ -111,21 +114,25 @@ public class App extends Application {
         TableColumn<Veiculo, String> c = new TableColumn<>(titulo); c.setCellValueFactory(d -> new ReadOnlyStringWrapper(valor.apply(d.getValue()))); c.setPrefWidth(largura); return c;
     }
 
-    private void atualizarTabela(String filtro) {
-        String termo = filtro == null ? "" : filtro.trim().toLowerCase(Locale.ROOT);
-        var itens = FXCollections.observableArrayList(controller.listarVeiculos());
-        FilteredList<Veiculo> filtrados = new FilteredList<>(itens, v -> (v.getMarca() + " " + v.getModelo() + " " + v.getChassi()).toLowerCase(Locale.ROOT).contains(termo));
-        tabela.setItems(filtrados);
-        quantidade.setText(String.valueOf(controller.listarVeiculos().size())); valor.setText(moeda.format(controller.valorTotalEstoque()));
+    /** Recarrega a tabela respeitando o texto da busca e atualiza os cards de resumo. */
+    private void atualizarTabela() {
+        tabela.setItems(FXCollections.observableArrayList(controller.pesquisar(busca.getText())));
+        quantidade.setText(String.valueOf(controller.listarVeiculos().size()));
+        valor.setText(moeda.format(controller.valorTotalEstoque()));
+        marcas.setText(String.valueOf(controller.listarMarcas().size()));
     }
 
     private void abrirFormulario(Veiculo atual) {
         Dialog<Veiculo> dialog = new Dialog<>(); dialog.setTitle(atual == null ? "Cadastrar veículo" : "Editar veículo"); dialog.setHeaderText("Preencha as informações do veículo");
         ButtonType salvar = new ButtonType("Salvar", ButtonBar.ButtonData.OK_DONE); dialog.getDialogPane().getButtonTypes().addAll(salvar, ButtonType.CANCEL);
         ComboBox<String> tipo = new ComboBox<>(FXCollections.observableArrayList("Carro", "Caminhonete")); tipo.setValue(atual instanceof Caminhonete ? "Caminhonete" : "Carro");
-        TextField chassi = campo(atual == null ? "Ex.: 9BWZZZ..." : atual.getChassi()); chassi.setDisable(atual != null); TextField marca = campo(atual == null ? "Ex.: Volkswagen" : atual.getMarca()); TextField modelo = campo(atual == null ? "Ex.: Polo" : atual.getModelo());
-        TextField ano = campo(atual == null ? "2024" : String.valueOf(atual.getAnoFabricacao())); TextField preco = campo(atual == null ? "85000,00" : String.valueOf(atual.getPreco()));
-        TextField detalhe = campo(atual instanceof Carro c ? String.valueOf(c.getNumeroPortas()) : atual instanceof Caminhonete c ? String.valueOf(c.getCapacidadeCargaKg()) : "4");
+        TextField chassi = campo(atual == null ? null : atual.getChassi(), "Ex.: 9BWZZZ377VT004251"); chassi.setDisable(atual != null);
+        TextField marca = campo(atual == null ? null : atual.getMarca(), "Ex.: Volkswagen");
+        TextField modelo = campo(atual == null ? null : atual.getModelo(), "Ex.: Polo");
+        TextField ano = campo(atual == null ? null : String.valueOf(atual.getAnoFabricacao()), "Ex.: 2024");
+        // Preço e carga são exibidos no formato brasileiro ("89900,00"), o mesmo que o ConversorNumero lê de volta
+        TextField preco = campo(atual == null ? null : ConversorNumero.paraTexto(atual.getPreco()), "Ex.: 85000,00");
+        TextField detalhe = campo(atual instanceof Carro c ? String.valueOf(c.getNumeroPortas()) : atual instanceof Caminhonete c ? ConversorNumero.paraTexto(c.getCapacidadeCargaKg()) : null, "Ex.: 4");
         Label detalheLabel = new Label("Número de portas");
         Runnable ajustar = () -> detalheLabel.setText(tipo.getValue().equals("Carro") ? "Número de portas" : "Capacidade (kg)"); tipo.valueProperty().addListener((o,a,b) -> ajustar.run());
         GridPane grid = new GridPane(); grid.setHgap(12); grid.setVgap(10); grid.addRow(0, new Label("Tipo"), tipo); grid.addRow(1, new Label("Chassi"), chassi); grid.addRow(2, new Label("Marca"), marca); grid.addRow(3, new Label("Modelo"), modelo); grid.addRow(4, new Label("Ano"), ano); grid.addRow(5, new Label("Preço (R$)"), preco); grid.addRow(6, detalheLabel, detalhe);
@@ -133,23 +140,29 @@ public class App extends Application {
         dialog.getDialogPane().lookupButton(salvar).disableProperty().bind(chassi.textProperty().isEmpty().or(marca.textProperty().isEmpty()).or(modelo.textProperty().isEmpty()).or(ano.textProperty().isEmpty()).or(preco.textProperty().isEmpty()).or(detalhe.textProperty().isEmpty()));
         dialog.setResultConverter(bt -> {
             if (bt != salvar) return null;
-            try { String placaChassi = chassi.getText().trim(); int anoNum = Integer.parseInt(ano.getText().trim()); double precoNum = Double.parseDouble(preco.getText().trim().replace(".", "").replace(',', '.'));
-                return tipo.getValue().equals("Carro") ? new Carro(placaChassi, modelo.getText().trim(), marca.getText().trim(), anoNum, precoNum, Integer.parseInt(detalhe.getText().trim())) : new Caminhonete(placaChassi, modelo.getText().trim(), marca.getText().trim(), anoNum, precoNum, Double.parseDouble(detalhe.getText().trim().replace(',', '.')));
-            } catch (IllegalArgumentException ex) { aviso(ex.getMessage()); return null; }
+            try {
+                String placaChassi = chassi.getText().trim();
+                int anoNum = ConversorNumero.paraInteiro(ano.getText(), "Ano");
+                double precoNum = ConversorNumero.paraDecimal(preco.getText(), "Preço");
+                return tipo.getValue().equals("Carro")
+                        ? new Carro(placaChassi, modelo.getText(), marca.getText(), anoNum, precoNum, ConversorNumero.paraInteiro(detalhe.getText(), "Número de portas"))
+                        : new Caminhonete(placaChassi, modelo.getText(), marca.getText(), anoNum, precoNum, ConversorNumero.paraDecimal(detalhe.getText(), "Capacidade de carga"));
+            } catch (IllegalArgumentException ex) { aviso(ex.getMessage()); return null; } // inclui DadosInvalidosException
         });
         Optional<Veiculo> resultado = dialog.showAndWait();
         resultado.ifPresent(v -> {
             try {
                 if (atual == null) controller.cadastrarVeiculo(v);
                 else controller.atualizarVeiculo(v);
-                atualizarTabela("");
-            } catch (IllegalArgumentException | ErroPersistenciaException | VeiculoNaoEncontradoException ex) {
+                atualizarTabela();
+            } catch (VeiculoDuplicadoException | IllegalArgumentException | ErroPersistenciaException | VeiculoNaoEncontradoException ex) {
                 mostrarErro("Não foi possível salvar o veículo", ex.getMessage());
             }
         });
     }
 
-    private TextField campo(String texto) { TextField f = new TextField(texto); f.setPrefWidth(260); return f; }
+    /** Campo de texto com o valor atual (na edição) e um exemplo em cinza (no cadastro). */
+    private TextField campo(String valorAtual, String exemplo) { TextField f = new TextField(valorAtual); f.setPromptText(exemplo); f.setPrefWidth(260); return f; }
     private String botaoPrimario() { return "-fx-background-color: #1769aa; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 10 16;"; }
     private void removerSelecionado() {
         Veiculo v = tabela.getSelectionModel().getSelectedItem(); if (v == null) { aviso("Selecione um veículo na tabela."); return; }
@@ -158,7 +171,7 @@ public class App extends Application {
         confirmacao.showAndWait().filter(b -> b == ButtonType.OK).ifPresent(b -> {
             try {
                 controller.removerVeiculo(v.getChassi());
-                atualizarTabela("");
+                atualizarTabela();
             } catch (ErroPersistenciaException | VeiculoNaoEncontradoException ex) {
                 mostrarErro("Não foi possível remover o veículo", ex.getMessage());
             }
