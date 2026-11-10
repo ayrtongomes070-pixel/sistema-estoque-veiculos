@@ -1,6 +1,8 @@
 package com.estoqueveiculos.repository;
 
+import com.estoqueveiculos.exception.DadosInvalidosException;
 import com.estoqueveiculos.exception.ErroPersistenciaException;
+import com.estoqueveiculos.exception.VeiculoDuplicadoException;
 import com.estoqueveiculos.exception.VeiculoNaoEncontradoException;
 import com.estoqueveiculos.model.Caminhonete;
 import com.estoqueveiculos.model.Carro;
@@ -13,83 +15,69 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
-/** Repositório de veículos persistido em arquivo Properties UTF-8. */
-public class VeiculoRepositoryArquivo implements IVeiculoRepository {
+/**
+ * Repositório de veículos persistido em arquivo Properties UTF-8.
+ * Reaproveita as regras do {@link VeiculoRepositoryMemoria} e, a cada alteração,
+ * grava o estoque inteiro no arquivo. Se a gravação falhar, a alteração é desfeita
+ * em memória para que tela e arquivo nunca fiquem diferentes.
+ */
+public class VeiculoRepositoryArquivo extends VeiculoRepositoryMemoria {
+    private static final String TIPO_CARRO = "CARRO";
+    private static final String TIPO_CAMINHONETE = "CAMINHONETE";
+
     private final Path arquivo;
-    private Map<String, Veiculo> veiculos;
 
     public VeiculoRepositoryArquivo(Path arquivo) {
-        if (arquivo == null) throw new IllegalArgumentException("O caminho do arquivo é obrigatório.");
+        if (arquivo == null) throw new DadosInvalidosException("O caminho do arquivo é obrigatório.");
         this.arquivo = arquivo.toAbsolutePath().normalize();
-        this.veiculos = carregar();
+        carregar();
     }
 
     @Override
-    public synchronized void salvar(Veiculo veiculo) {
-        validarVeiculo(veiculo);
-        if (veiculos.containsKey(veiculo.getChassi())) {
-            throw new IllegalArgumentException("Já existe um veículo com esse chassi.");
-        }
-        Map<String, Veiculo> atualizados = new LinkedHashMap<>(veiculos);
-        atualizados.put(veiculo.getChassi(), veiculo);
-        persistirEAtualizar(atualizados);
+    public void salvar(Veiculo veiculo) {
+        Map<String, Veiculo> anterior = copiarDados();
+        super.salvar(veiculo);
+        gravarOuDesfazer(anterior);
     }
 
     @Override
-    public synchronized Veiculo buscarPorChassi(String chassi) throws VeiculoNaoEncontradoException {
-        Veiculo veiculo = veiculos.get(chassi);
-        if (veiculo == null) throw new VeiculoNaoEncontradoException(chassi);
-        return veiculo;
+    public void atualizar(Veiculo veiculo) throws VeiculoNaoEncontradoException {
+        Map<String, Veiculo> anterior = copiarDados();
+        super.atualizar(veiculo);
+        gravarOuDesfazer(anterior);
     }
 
     @Override
-    public synchronized List<Veiculo> listarTodos() {
-        return new ArrayList<>(veiculos.values());
+    public void remover(String chassi) throws VeiculoNaoEncontradoException {
+        Map<String, Veiculo> anterior = copiarDados();
+        super.remover(chassi);
+        gravarOuDesfazer(anterior);
     }
 
-    @Override
-    public synchronized void atualizar(Veiculo veiculo) throws VeiculoNaoEncontradoException {
-        validarVeiculo(veiculo);
-        if (!veiculos.containsKey(veiculo.getChassi())) {
-            throw new VeiculoNaoEncontradoException(veiculo.getChassi());
-        }
-        Map<String, Veiculo> atualizados = new LinkedHashMap<>(veiculos);
-        atualizados.put(veiculo.getChassi(), veiculo);
-        persistirEAtualizar(atualizados);
-    }
+    // ---------- Leitura ----------
 
-    @Override
-    public synchronized void remover(String chassi) throws VeiculoNaoEncontradoException {
-        if (!veiculos.containsKey(chassi)) throw new VeiculoNaoEncontradoException(chassi);
-        Map<String, Veiculo> atualizados = new LinkedHashMap<>(veiculos);
-        atualizados.remove(chassi);
-        persistirEAtualizar(atualizados);
-    }
-
-    private Map<String, Veiculo> carregar() {
-        Map<String, Veiculo> resultado = new LinkedHashMap<>();
-        if (!Files.exists(arquivo)) return resultado;
+    private void carregar() {
+        if (!Files.exists(arquivo)) return;
 
         Properties propriedades = new Properties();
         try (Reader reader = Files.newBufferedReader(arquivo)) {
             propriedades.load(reader);
             int quantidade = Integer.parseInt(propriedades.getProperty("quantidade", "0"));
-            if (quantidade < 0) throw new IllegalArgumentException("Quantidade de veículos inválida.");
+            if (quantidade < 0) throw new DadosInvalidosException("quantidade de veículos inválida");
             for (int i = 0; i < quantidade; i++) {
-                Veiculo veiculo = lerVeiculo(propriedades, i);
-                if (resultado.putIfAbsent(veiculo.getChassi(), veiculo) != null) {
-                    throw new IllegalArgumentException("Chassi duplicado no arquivo: " + veiculo.getChassi());
-                }
+                super.salvar(lerVeiculo(propriedades, i)); // super: não regrava o arquivo durante a leitura
             }
-            return resultado;
-        } catch (IOException | IllegalArgumentException ex) {
+        } catch (IOException ex) {
             throw new ErroPersistenciaException("Não foi possível ler o arquivo de veículos: " + arquivo, ex);
+        } catch (IllegalArgumentException | VeiculoDuplicadoException ex) {
+            // NumberFormatException e DadosInvalidosException são subclasses de IllegalArgumentException
+            throw new ErroPersistenciaException(
+                    "O arquivo de veículos está corrompido (" + ex.getMessage() + "): " + arquivo, ex);
         }
     }
 
@@ -104,34 +92,44 @@ public class VeiculoRepositoryArquivo implements IVeiculoRepository {
         String detalhe = obrigatoria(propriedades, prefixo + "detalhe");
 
         return switch (tipo) {
-            case "CARRO" -> new Carro(chassi, modelo, marca, ano, preco, Integer.parseInt(detalhe));
-            case "CAMINHONETE" -> new Caminhonete(chassi, modelo, marca, ano, preco, Double.parseDouble(detalhe));
-            default -> throw new IllegalArgumentException("Tipo de veículo desconhecido no registro " + indice + ".");
+            case TIPO_CARRO -> new Carro(chassi, modelo, marca, ano, preco, Integer.parseInt(detalhe));
+            case TIPO_CAMINHONETE -> new Caminhonete(chassi, modelo, marca, ano, preco, Double.parseDouble(detalhe));
+            default -> throw new DadosInvalidosException("tipo de veículo desconhecido no registro " + indice);
         };
     }
 
     private String obrigatoria(Properties propriedades, String chave) {
         String valor = propriedades.getProperty(chave);
-        if (valor == null) throw new IllegalArgumentException("Campo ausente no arquivo: " + chave);
+        if (valor == null) throw new DadosInvalidosException("campo ausente: " + chave);
         return valor;
     }
 
-    private void persistirEAtualizar(Map<String, Veiculo> atualizados) {
+    // ---------- Escrita ----------
+
+    private void gravarOuDesfazer(Map<String, Veiculo> estadoAnterior) {
+        try {
+            gravar(listarTodos());
+        } catch (ErroPersistenciaException ex) {
+            restaurarDados(estadoAnterior);
+            throw ex;
+        }
+    }
+
+    /** Grava num arquivo temporário e depois o move por cima do original, para nunca deixar um arquivo pela metade. */
+    private void gravar(List<Veiculo> veiculos) {
         Path temporario = null;
         try {
             Path pasta = arquivo.getParent();
             if (pasta != null) Files.createDirectories(pasta);
             temporario = Files.createTempFile(pasta, "veiculos-", ".tmp");
-            Properties propriedades = serializar(atualizados);
             try (Writer writer = Files.newBufferedWriter(temporario)) {
-                propriedades.store(writer, "Estoque de veículos - StockMaster");
+                serializar(veiculos).store(writer, "Estoque de veículos - AutoStock");
             }
             try {
                 Files.move(temporario, arquivo, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
             } catch (AtomicMoveNotSupportedException ex) {
                 Files.move(temporario, arquivo, StandardCopyOption.REPLACE_EXISTING);
             }
-            veiculos = atualizados;
         } catch (IOException ex) {
             throw new ErroPersistenciaException("Não foi possível salvar os veículos no arquivo: " + arquivo, ex);
         } finally {
@@ -141,27 +139,26 @@ public class VeiculoRepositoryArquivo implements IVeiculoRepository {
         }
     }
 
-    private Properties serializar(Map<String, Veiculo> origem) {
+    private Properties serializar(List<Veiculo> veiculos) {
         Properties propriedades = new Properties();
-        propriedades.setProperty("quantidade", String.valueOf(origem.size()));
+        propriedades.setProperty("quantidade", String.valueOf(veiculos.size()));
         int indice = 0;
-        for (Veiculo veiculo : origem.values()) {
+        for (Veiculo veiculo : veiculos) {
             String prefixo = "veiculo." + indice++ + ".";
-            propriedades.setProperty(prefixo + "tipo", veiculo instanceof Carro ? "CARRO" : "CAMINHONETE");
+            propriedades.setProperty(prefixo + "tipo", veiculo.getTipo().toUpperCase(Locale.ROOT));
             propriedades.setProperty(prefixo + "chassi", veiculo.getChassi());
             propriedades.setProperty(prefixo + "marca", veiculo.getMarca());
             propriedades.setProperty(prefixo + "modelo", veiculo.getModelo());
             propriedades.setProperty(prefixo + "ano", String.valueOf(veiculo.getAnoFabricacao()));
             propriedades.setProperty(prefixo + "preco", String.valueOf(veiculo.getPreco()));
-            String detalhe = veiculo instanceof Carro carro
-                    ? String.valueOf(carro.getNumeroPortas())
-                    : String.valueOf(((Caminhonete) veiculo).getCapacidadeCargaKg());
-            propriedades.setProperty(prefixo + "detalhe", detalhe);
+            propriedades.setProperty(prefixo + "detalhe", detalheBruto(veiculo));
         }
         return propriedades;
     }
 
-    private void validarVeiculo(Veiculo veiculo) {
-        if (veiculo == null) throw new IllegalArgumentException("Veículo não pode ser nulo.");
+    private static String detalheBruto(Veiculo veiculo) {
+        if (veiculo instanceof Carro carro) return String.valueOf(carro.getNumeroPortas());
+        if (veiculo instanceof Caminhonete caminhonete) return String.valueOf(caminhonete.getCapacidadeCargaKg());
+        throw new DadosInvalidosException("Tipo de veículo não suportado: " + veiculo.getClass().getSimpleName());
     }
 }

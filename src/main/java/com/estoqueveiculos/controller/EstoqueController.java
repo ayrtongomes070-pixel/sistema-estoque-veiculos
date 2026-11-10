@@ -5,11 +5,12 @@ import com.estoqueveiculos.model.Veiculo;
 import com.estoqueveiculos.service.EstoqueService;
 
 import java.util.List;
+import java.util.Set;
 
 /**
- * Controller que liga a tela de estoque (estoque.fxml, quando existir) ao EstoqueService.
- * Os métodos aqui não dependem de JavaFX — podem ser chamados tanto por uma
- * tela FXML (via @FXML) quanto por um menu de console, se necessário.
+ * Controller que liga a tela de estoque ao EstoqueService.
+ * Os métodos aqui não dependem de JavaFX — podem ser chamados tanto pela
+ * interface gráfica quanto por um menu de console, se necessário.
  */
 public class EstoqueController {
 
@@ -25,6 +26,14 @@ public class EstoqueController {
 
     public List<Veiculo> listarVeiculos() {
         return estoqueService.listarVeiculos();
+    }
+
+    public List<Veiculo> pesquisar(String termo) {
+        return estoqueService.pesquisar(termo);
+    }
+
+    public Set<String> listarMarcas() {
+        return estoqueService.listarMarcas();
     }
 
     public Veiculo buscarVeiculo(String chassi) throws VeiculoNaoEncontradoException {
