@@ -1,5 +1,7 @@
 package com.estoqueveiculos.model;
 
+import com.estoqueveiculos.exception.DadosInvalidosException;
+
 /**
  * Representa o cliente comprador de um veículo.
  * Imutável após a criação (sem setters), conforme modelagem da Etapa 2.
@@ -13,10 +15,10 @@ public class Cliente {
 
     public Cliente(String cpf, String nome, String telefone, String email) {
         if (cpf == null || cpf.isBlank()) {
-            throw new IllegalArgumentException("CPF não pode ser vazio.");
+            throw new DadosInvalidosException("CPF não pode ser vazio.");
         }
         if (nome == null || nome.isBlank()) {
-            throw new IllegalArgumentException("Nome não pode ser vazio.");
+            throw new DadosInvalidosException("Nome não pode ser vazio.");
         }
         this.cpf = cpf;
         this.nome = nome;

@@ -1,10 +1,17 @@
 package com.estoqueveiculos.model;
 
+import com.estoqueveiculos.exception.DadosInvalidosException;
+
+import java.time.Year;
+
 /**
  * Classe abstrata que representa um veículo genérico.
  * Não deve ser instanciada diretamente — use as subclasses (Carro, Caminhonete).
  */
 public abstract class Veiculo {
+
+    /** Ano do primeiro automóvel produzido; nenhum veículo pode ser mais antigo que isso. */
+    private static final int ANO_MINIMO = 1886;
 
     private String chassi;
     private String modelo;
@@ -12,29 +19,35 @@ public abstract class Veiculo {
     private int anoFabricacao;
     private double preco;
 
-    public Veiculo(String chassi, String modelo, String marca, int anoFabricacao, double preco) {
-        validarChassi(chassi);
+    protected Veiculo(String chassi, String modelo, String marca, int anoFabricacao, double preco) {
+        validarTexto(chassi, "Chassi");
         validarTexto(modelo, "Modelo");
         validarTexto(marca, "Marca");
         validarAno(anoFabricacao);
         validarPreco(preco);
-        this.chassi = chassi;
-        this.modelo = modelo;
-        this.marca = marca;
+        this.chassi = chassi.trim();
+        this.modelo = modelo.trim();
+        this.marca = marca.trim();
         this.anoFabricacao = anoFabricacao;
         this.preco = preco;
     }
 
-    // Método abstrato — cada tipo de veículo calcula seu próprio desconto/imposto (polimorfismo)
+    // Métodos abstratos — cada tipo de veículo define seu comportamento (polimorfismo)
     public abstract double calcularDesconto();
+
+    /** Nome do tipo exibido na interface (ex.: "Carro"). */
+    public abstract String getTipo();
+
+    /** Descrição do atributo específico do tipo (ex.: "4 portas", "1100 kg"). */
+    public abstract String getDescricaoDetalhe();
 
     public String getChassi() {
         return chassi;
     }
 
     public void setChassi(String chassi) {
-        validarChassi(chassi);
-        this.chassi = chassi;
+        validarTexto(chassi, "Chassi");
+        this.chassi = chassi.trim();
     }
 
     public String getModelo() {
@@ -43,7 +56,7 @@ public abstract class Veiculo {
 
     public void setModelo(String modelo) {
         validarTexto(modelo, "Modelo");
-        this.modelo = modelo;
+        this.modelo = modelo.trim();
     }
 
     public String getMarca() {
@@ -52,7 +65,7 @@ public abstract class Veiculo {
 
     public void setMarca(String marca) {
         validarTexto(marca, "Marca");
-        this.marca = marca;
+        this.marca = marca.trim();
     }
 
     public int getAnoFabricacao() {
@@ -73,20 +86,19 @@ public abstract class Veiculo {
         this.preco = preco;
     }
 
-    private static void validarChassi(String chassi) {
-        if (chassi == null || chassi.isBlank()) throw new IllegalArgumentException("Chassi não pode ser vazio.");
-    }
-
     private static void validarTexto(String valor, String campo) {
-        if (valor == null || valor.isBlank()) throw new IllegalArgumentException(campo + " não pode ser vazio.");
+        if (valor == null || valor.isBlank()) throw new DadosInvalidosException(campo + " não pode ser vazio.");
     }
 
     private static void validarAno(int ano) {
-        if (ano <= 0) throw new IllegalArgumentException("Ano de fabricação deve ser maior que zero.");
+        int anoMaximo = Year.now().getValue() + 1; // permite modelos do ano seguinte
+        if (ano < ANO_MINIMO || ano > anoMaximo) {
+            throw new DadosInvalidosException("Ano de fabricação deve estar entre " + ANO_MINIMO + " e " + anoMaximo + ".");
+        }
     }
 
     private static void validarPreco(double preco) {
-        if (!Double.isFinite(preco) || preco < 0) throw new IllegalArgumentException("Preço deve ser um valor válido e não negativo.");
+        if (!Double.isFinite(preco) || preco < 0) throw new DadosInvalidosException("Preço deve ser um valor válido e não negativo.");
     }
 
     @Override

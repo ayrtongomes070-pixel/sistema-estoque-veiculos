@@ -1,5 +1,7 @@
 package com.estoqueveiculos.model;
 
+import com.estoqueveiculos.exception.DadosInvalidosException;
+
 /**
  * Representa o vendedor responsável por registrar vendas.
  * Imutável após a criação (sem setters), conforme modelagem da Etapa 2.
@@ -14,7 +16,7 @@ public class Vendedor {
 
     public Vendedor(int id, String nome, String login, String senha) {
         if (login == null || login.isBlank()) {
-            throw new IllegalArgumentException("Login não pode ser vazio.");
+            throw new DadosInvalidosException("Login não pode ser vazio.");
         }
         this.id = id;
         this.nome = nome;

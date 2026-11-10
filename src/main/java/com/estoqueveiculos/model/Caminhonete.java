@@ -1,5 +1,9 @@
 package com.estoqueveiculos.model;
 
+import com.estoqueveiculos.exception.DadosInvalidosException;
+
+import java.util.Locale;
+
 public class Caminhonete extends Veiculo {
 
     private double capacidadeCargaKg;
@@ -7,10 +11,7 @@ public class Caminhonete extends Veiculo {
     public Caminhonete(String chassi, String modelo, String marca, int anoFabricacao,
                         double preco, double capacidadeCargaKg) {
         super(chassi, modelo, marca, anoFabricacao, preco);
-        if (capacidadeCargaKg <= 0) {
-            throw new IllegalArgumentException("Capacidade de carga deve ser maior que zero.");
-        }
-        this.capacidadeCargaKg = capacidadeCargaKg;
+        setCapacidadeCargaKg(capacidadeCargaKg);
     }
 
     @Override
@@ -19,13 +20,23 @@ public class Caminhonete extends Veiculo {
         return getPreco() * 0.03;
     }
 
+    @Override
+    public String getTipo() {
+        return "Caminhonete";
+    }
+
+    @Override
+    public String getDescricaoDetalhe() {
+        return String.format(Locale.forLanguageTag("pt-BR"), "%.0f kg", capacidadeCargaKg);
+    }
+
     public double getCapacidadeCargaKg() {
         return capacidadeCargaKg;
     }
 
     public void setCapacidadeCargaKg(double capacidadeCargaKg) {
         if (!Double.isFinite(capacidadeCargaKg) || capacidadeCargaKg <= 0) {
-            throw new IllegalArgumentException("Capacidade de carga deve ser um valor válido e maior que zero.");
+            throw new DadosInvalidosException("Capacidade de carga deve ser um valor válido e maior que zero.");
         }
         this.capacidadeCargaKg = capacidadeCargaKg;
     }

@@ -1,40 +1,42 @@
 package com.estoqueveiculos.repository;
 
-import com.estoqueveiculos.exception.VeiculoNaoEncontradoException;
 import com.estoqueveiculos.model.Veiculo;
 
 import java.util.List;
 
 /**
- * Implementação de IVeiculoRepository usando JDBC + MySQL.
- * TODO: implementar os métodos usando java.sql.Connection (ver util.ConexaoBD).
+ * Implementação de IVeiculoRepository usando JDBC + MySQL — PLANEJADA, ainda não implementada.
+ * Enquanto isso, cada método lança {@link UnsupportedOperationException} com uma mensagem clara,
+ * em vez de não fazer nada e perder dados silenciosamente.
+ * A aplicação usa {@link VeiculoRepositoryArquivo}.
  */
 public class VeiculoRepositoryJDBC implements IVeiculoRepository {
 
+    private static final String MENSAGEM =
+            "Persistência em MySQL ainda não implementada. Use VeiculoRepositoryArquivo.";
+
     @Override
     public void salvar(Veiculo veiculo) {
-        // TODO: implementar INSERT via JDBC
+        throw new UnsupportedOperationException(MENSAGEM);
     }
 
     @Override
-    public Veiculo buscarPorChassi(String chassi) throws VeiculoNaoEncontradoException {
-        // TODO: implementar SELECT via JDBC
-        throw new VeiculoNaoEncontradoException(chassi);
+    public Veiculo buscarPorChassi(String chassi) {
+        throw new UnsupportedOperationException(MENSAGEM);
     }
 
     @Override
     public List<Veiculo> listarTodos() {
-        // TODO: implementar SELECT * via JDBC
-        return List.of();
+        throw new UnsupportedOperationException(MENSAGEM);
     }
 
     @Override
-    public void atualizar(Veiculo veiculo) throws VeiculoNaoEncontradoException {
-        // TODO: implementar UPDATE via JDBC
+    public void atualizar(Veiculo veiculo) {
+        throw new UnsupportedOperationException(MENSAGEM);
     }
 
     @Override
-    public void remover(String chassi) throws VeiculoNaoEncontradoException {
-        // TODO: implementar DELETE via JDBC
+    public void remover(String chassi) {
+        throw new UnsupportedOperationException(MENSAGEM);
     }
 }

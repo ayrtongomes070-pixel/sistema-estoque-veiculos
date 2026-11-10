@@ -4,6 +4,7 @@ import com.estoqueveiculos.model.Cliente;
 import com.estoqueveiculos.model.Veiculo;
 import com.estoqueveiculos.model.Vendedor;
 import com.estoqueveiculos.model.Venda;
+import com.estoqueveiculos.exception.DadosInvalidosException;
 import com.estoqueveiculos.exception.VeiculoNaoEncontradoException;
 import com.estoqueveiculos.repository.IVeiculoRepository;
 
@@ -20,7 +21,7 @@ public class VendaService {
     private int proximoId = 1;
 
     public VendaService(IVeiculoRepository veiculoRepository) {
-        if (veiculoRepository == null) throw new IllegalArgumentException("Repositório de veículos é obrigatório.");
+        if (veiculoRepository == null) throw new DadosInvalidosException("Repositório de veículos é obrigatório.");
         this.veiculoRepository = veiculoRepository;
     }
 
@@ -39,7 +40,7 @@ public class VendaService {
 
     public double totalVendidoNoPeriodo(LocalDate inicio, LocalDate fim) {
         if (inicio == null || fim == null || fim.isBefore(inicio)) {
-            throw new IllegalArgumentException("Informe um período válido.");
+            throw new DadosInvalidosException("Informe um período válido: a data final não pode ser anterior à inicial.");
         }
         return vendas.stream()
                 .filter(venda -> !venda.getDataVenda().isBefore(inicio)
