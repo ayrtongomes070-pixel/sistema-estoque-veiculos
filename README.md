@@ -49,6 +49,13 @@ MVC organizado em camadas:
 | `util` | Utilitários: `ConversorNumero` (leitura dos campos numéricos) e `ConexaoBD` |
 | `App` | Interface gráfica JavaFX |
 
+## Padrões de Projeto GoF aplicados
+
+- **Strategy:** `IVeiculoRepository` é o contrato da estratégia de persistência. `VeiculoRepositoryArquivo` e `VeiculoRepositoryMemoria` implementam formas diferentes de armazenar veículos. `EstoqueService` recebe a interface, então as regras de negócio não precisam conhecer os detalhes de armazenamento.
+- **Observer:** `EstoqueObserver` representa quem acompanha mudanças do estoque. `EstoqueService` notifica os observadores após cadastro, edição ou remoção concluídos; `App` observa e atualiza a tabela e os indicadores. Isso mantém a tela sincronizada sem duplicar chamadas de atualização em cada ação da interface.
+
+As classes e os métodos públicos possuem Javadocs com suas responsabilidades, parâmetros, retornos e exceções quando aplicável.
+
 ## Funcionalidades
 
 - Listagem e pesquisa por marca, modelo ou chassi
@@ -106,7 +113,7 @@ As mensagens indicam o campo ou o chassi envolvido (ex.: *"Ano deve ser um núme
 
 ### Testes unitários
 
-37 testes JUnit 5, organizados no mesmo pacote da classe testada e documentados com `@DisplayName`:
+38 testes JUnit 5, organizados no mesmo pacote da classe testada e documentados com `@DisplayName`:
 
 | Classe de teste | O que cobre |
 |---|---|

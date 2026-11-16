@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -105,5 +106,22 @@ class EstoqueServiceTest {
                 () -> servico.cadastrarVeiculo(new Carro("CARRO-1", "Onix", "Chevrolet", 2024, 80000, 4)));
         assertThrows(VeiculoNaoEncontradoException.class, () -> servico.removerVeiculo("INEXISTENTE"));
         assertThrows(VeiculoNaoEncontradoException.class, () -> servico.buscarPorChassi("INEXISTENTE"));
+    }
+
+    @Test
+    @DisplayName("notifica observadores após alterações bem-sucedidas")
+    void notificaObservadoresAposAlteracoes() throws Exception {
+        AtomicInteger notificacoes = new AtomicInteger();
+        EstoqueObserver observador = () -> notificacoes.incrementAndGet();
+        servico.adicionarObservador(observador);
+
+        servico.cadastrarVeiculo(new Carro("CARRO-1", "Polo", "Volkswagen", 2024, 90000, 4));
+        servico.atualizarVeiculo(new Carro("CARRO-1", "Polo", "Volkswagen", 2025, 95000, 4));
+        servico.removerVeiculo("CARRO-1");
+        assertEquals(3, notificacoes.get());
+
+        servico.removerObservador(observador);
+        servico.cadastrarVeiculo(new Carro("CARRO-2", "Onix", "Chevrolet", 2024, 80000, 4));
+        assertEquals(3, notificacoes.get());
     }
 }

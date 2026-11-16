@@ -32,7 +32,7 @@ public abstract class Veiculo {
         this.preco = preco;
     }
 
-    // Métodos abstratos — cada tipo de veículo define seu comportamento (polimorfismo)
+    /** Calcula o desconto comercial definido pelo subtipo do veículo. */
     public abstract double calcularDesconto();
 
     /** Nome do tipo exibido na interface (ex.: "Carro"). */
@@ -41,46 +41,56 @@ public abstract class Veiculo {
     /** Descrição do atributo específico do tipo (ex.: "4 portas", "1100 kg"). */
     public abstract String getDescricaoDetalhe();
 
+    /** Retorna o chassi do veículo. */
     public String getChassi() {
         return chassi;
     }
 
+    /** Altera o chassi após validar e remover espaços externos. */
     public void setChassi(String chassi) {
         validarTexto(chassi, "Chassi");
         this.chassi = chassi.trim();
     }
 
+    /** Retorna o modelo do veículo. */
     public String getModelo() {
         return modelo;
     }
 
+    /** Altera o modelo após validar e remover espaços externos. */
     public void setModelo(String modelo) {
         validarTexto(modelo, "Modelo");
         this.modelo = modelo.trim();
     }
 
+    /** Retorna a marca do veículo. */
     public String getMarca() {
         return marca;
     }
 
+    /** Altera a marca após validar e remover espaços externos. */
     public void setMarca(String marca) {
         validarTexto(marca, "Marca");
         this.marca = marca.trim();
     }
 
+    /** Retorna o ano de fabricação. */
     public int getAnoFabricacao() {
         return anoFabricacao;
     }
 
+    /** Altera o ano de fabricação dentro do intervalo permitido. */
     public void setAnoFabricacao(int anoFabricacao) {
         validarAno(anoFabricacao);
         this.anoFabricacao = anoFabricacao;
     }
 
+    /** Retorna o preço do veículo. */
     public double getPreco() {
         return preco;
     }
 
+    /** Altera o preço após validar que seja finito e não negativo. */
     public void setPreco(double preco) {
         validarPreco(preco);
         this.preco = preco;
@@ -101,12 +111,14 @@ public abstract class Veiculo {
         if (!Double.isFinite(preco) || preco < 0) throw new DadosInvalidosException("Preço deve ser um valor válido e não negativo.");
     }
 
+    /** Retorna uma descrição textual do veículo. */
     @Override
     public String toString() {
         return String.format("%s %s (%d) - Chassi: %s - R$ %.2f",
                 marca, modelo, anoFabricacao, chassi, preco);
     }
 
+    /** Compara veículos pelo chassi. */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -114,6 +126,7 @@ public abstract class Veiculo {
         return chassi.equals(((Veiculo) o).chassi);
     }
 
+    /** Calcula o hash usando o chassi. */
     @Override
     public int hashCode() {
         return chassi.hashCode();

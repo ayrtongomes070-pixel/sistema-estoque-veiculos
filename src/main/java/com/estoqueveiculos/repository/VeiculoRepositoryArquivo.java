@@ -32,6 +32,11 @@ public class VeiculoRepositoryArquivo extends VeiculoRepositoryMemoria {
 
     private final Path arquivo;
 
+    /** Abre o arquivo local e carrega os registros de veículos existentes.
+     * @param arquivo caminho do arquivo Properties a ser usado
+     * @throws DadosInvalidosException se o caminho for nulo ou o arquivo tiver dados inválidos
+     * @throws ErroPersistenciaException se o arquivo não puder ser lido
+     */
     public VeiculoRepositoryArquivo(Path arquivo) {
         if (arquivo == null) throw new DadosInvalidosException("O caminho do arquivo é obrigatório.");
         this.arquivo = arquivo.toAbsolutePath().normalize();

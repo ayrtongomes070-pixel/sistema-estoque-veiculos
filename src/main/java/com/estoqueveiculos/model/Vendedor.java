@@ -14,6 +14,7 @@ public class Vendedor {
     private final String login;
     private final String senha;
 
+    /** Cria um vendedor; o login é obrigatório. */
     public Vendedor(int id, String nome, String login, String senha) {
         if (login == null || login.isBlank()) {
             throw new DadosInvalidosException("Login não pode ser vazio.");
@@ -24,23 +25,28 @@ public class Vendedor {
         this.senha = senha;
     }
 
+    /** Retorna o identificador do vendedor. */
     public int getId() {
         return id;
     }
 
+    /** Retorna o nome do vendedor. */
     public String getNome() {
         return nome;
     }
 
+    /** Retorna o login; a senha não é exposta pela API pública. */
     public String getLogin() {
         return login;
     }
 
+    /** Retorna o nome e o login em formato textual. */
     @Override
     public String toString() {
         return nome + " (login: " + login + ")";
     }
 
+    /** Compara vendedores pelo login. */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -48,6 +54,7 @@ public class Vendedor {
         return login.equals(((Vendedor) o).login);
     }
 
+    /** Calcula o código hash usando o login. */
     @Override
     public int hashCode() {
         return login.hashCode();

@@ -7,10 +7,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 
-/**
- * Gerencia a conexão com o banco de dados MySQL, lendo as
- * configurações do arquivo db.properties (em src/main/resources).
- */
+/** Utilitário para abrir uma conexão MySQL configurada em {@code db.properties}. */
 public class ConexaoBD {
 
     private static Properties carregarProperties() throws IOException {
@@ -27,6 +24,11 @@ public class ConexaoBD {
         return props;
     }
 
+    /** Abre uma conexão usando as credenciais do arquivo de configuração.
+     * @return conexão JDBC aberta
+     * @throws SQLException se o driver não conseguir estabelecer a conexão
+     * @throws IOException se o arquivo de configuração estiver ausente ou ilegível
+     */
     public static Connection conectar() throws SQLException, IOException {
         Properties props = carregarProperties();
         String url = props.getProperty("db.url");

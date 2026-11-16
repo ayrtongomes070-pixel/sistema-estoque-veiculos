@@ -26,7 +26,7 @@ import java.nio.file.Files;
 import java.util.Locale;
 import java.util.Optional;
 
-/** Aplicação desktop JavaFX para gerenciamento básico de veículos. */
+/** Aplicação desktop StockMaster; a tela observa alterações do estoque. */
 public class App extends Application {
     private EstoqueController controller;
     private final TableView<Veiculo> tabela = new TableView<>();
@@ -36,6 +36,9 @@ public class App extends Application {
     private final TextField busca = new TextField();
     private final NumberFormat moeda = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR"));
 
+    /** Inicializa persistência, tela e observador de mudanças do estoque.
+     * @param stage janela principal fornecida pelo JavaFX
+     */
     @Override public void start(Stage stage) {
         try {
             Path arquivoEstoque = Path.of("dados", "veiculos.properties");
@@ -52,6 +55,7 @@ public class App extends Application {
         root.setCenter(conteudo());
         root.setStyle("-fx-background-color: #f3f6fa; -fx-font-family: 'Arial';");
         atualizarTabela();
+        controller.adicionarObservador(this::atualizarTabela);
         Scene scene = new Scene(root, 1120, 720);
         stage.setTitle("AutoStock | Estoque de veículos");
         stage.setMinWidth(900);
@@ -154,7 +158,6 @@ public class App extends Application {
             try {
                 if (atual == null) controller.cadastrarVeiculo(v);
                 else controller.atualizarVeiculo(v);
-                atualizarTabela();
             } catch (VeiculoDuplicadoException | IllegalArgumentException | ErroPersistenciaException | VeiculoNaoEncontradoException ex) {
                 mostrarErro("Não foi possível salvar o veículo", ex.getMessage());
             }
@@ -171,7 +174,6 @@ public class App extends Application {
         confirmacao.showAndWait().filter(b -> b == ButtonType.OK).ifPresent(b -> {
             try {
                 controller.removerVeiculo(v.getChassi());
-                atualizarTabela();
             } catch (ErroPersistenciaException | VeiculoNaoEncontradoException ex) {
                 mostrarErro("Não foi possível remover o veículo", ex.getMessage());
             }
@@ -189,5 +191,8 @@ public class App extends Application {
         controller.cadastrarVeiculo(new Carro("9BGKS48U0FG123456", "Onix", "Chevrolet", 2022, 75900, 4));
         controller.cadastrarVeiculo(new Caminhonete("1FTFW1ET5EFA12345", "Ranger", "Ford", 2024, 239900, 1100));
     }
+    /** Ponto de entrada da aplicação JavaFX.
+     * @param args argumentos recebidos pelo processo
+     */
     public static void main(String[] args) { launch(args); }
 }
