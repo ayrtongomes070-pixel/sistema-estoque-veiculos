@@ -45,16 +45,68 @@ MVC organizado em camadas:
 | `repository` | Acesso a dados: interface `IVeiculoRepository` e implementações em memória, em arquivo e JDBC (planejada) |
 | `service` | Regras de negócio: `EstoqueService`, `VendaService`, `SessaoUsuario` |
 | `controller` | Liga a interface aos services: `EstoqueController`, `VendaController` |
+| `factory` | Criação de veículos (Factory Method): `VeiculoFactory`, `CarroFactory`, `CaminhoneteFactory` |
 | `exception` | Exceções específicas do sistema |
 | `util` | Utilitários: `ConversorNumero` (leitura dos campos numéricos) e `ConexaoBD` |
 | `App` | Interface gráfica JavaFX |
 
 ## Padrões de Projeto GoF aplicados
 
-- **Strategy:** `IVeiculoRepository` é o contrato da estratégia de persistência. `VeiculoRepositoryArquivo` e `VeiculoRepositoryMemoria` implementam formas diferentes de armazenar veículos. `EstoqueService` recebe a interface, então as regras de negócio não precisam conhecer os detalhes de armazenamento.
-- **Observer:** `EstoqueObserver` representa quem acompanha mudanças do estoque. `EstoqueService` notifica os observadores após cadastro, edição ou remoção concluídos; `App` observa e atualiza a tabela e os indicadores. Isso mantém a tela sincronizada sem duplicar chamadas de atualização em cada ação da interface.
+Foram aplicados três padrões GoF, cada um escolhido para resolver um problema concreto que já existia no código, e não apenas para cumprir o requisito.
 
-As classes e os métodos públicos possuem Javadocs com suas responsabilidades, parâmetros, retornos e exceções quando aplicável.
+| Padrão | Categoria | Onde está | Problema resolvido |
+|---|---|---|---|
+| **Strategy** | Comportamental | `repository/IVeiculoRepository` + implementações | Trocar a forma de armazenar veículos sem mexer nas regras de negócio |
+| **Observer** | Comportamental | `service/EstoqueObserver`, `service/EstoqueService`, `App` | Manter a tela sincronizada com o estoque sem chamadas de atualização espalhadas |
+| **Factory Method** | Criacional | `factory/VeiculoFactory`, `CarroFactory`, `CaminhoneteFactory` | Criar o tipo certo de veículo a partir de texto (formulário e arquivo) sem `switch`/`instanceof` duplicados |
+
+### 1. Strategy — estratégia de persistência
+
+**Problema.** O sistema precisa guardar veículos de formas diferentes: em memória (testes), em arquivo local (versão atual) e, no futuro, em MySQL. Se `EstoqueService` e `VendaService` criassem diretamente um repositório específico, cada troca de armazenamento obrigaria a alterar as regras de negócio.
+
+**Aplicação.**
+- *Strategy (contrato):* `IVeiculoRepository` define `salvar`, `buscarPorChassi`, `listarTodos`, `atualizar` e `remover`.
+- *Estratégias concretas:* `VeiculoRepositoryMemoria`, `VeiculoRepositoryArquivo` (herda da memória e acrescenta a gravação em disco) e `VeiculoRepositoryJDBC` (planejada).
+- *Contexto:* `EstoqueService` e `VendaService` recebem a interface no construtor. A `App` escolhe `VeiculoRepositoryArquivo`; os testes usam `VeiculoRepositoryMemoria` ou o arquivo em pasta temporária.
+
+**Por que é adequado.** O algoritmo de armazenamento varia, mas o uso é o mesmo. Com o Strategy a troca é feita em uma única linha (`new EstoqueService(repositorio)`), os testes rodam sem disco nem banco, e a implementação JDBC poderá ser plugada sem alterar os serviços (princípio aberto/fechado).
+
+### 2. Observer — atualização da tela quando o estoque muda
+
+**Problema.** Depois de cadastrar, editar ou remover um veículo, a tabela e os três cards de resumo (quantidade, valor total e marcas) precisam ser recalculados. Sem o padrão, cada ação da interface teria que lembrar de chamar a atualização, e qualquer nova operação que alterasse o estoque poderia deixar a tela desatualizada.
+
+**Aplicação.**
+- *Observer:* interface funcional `EstoqueObserver` com o método `aoAlterarEstoque()`.
+- *Subject:* `EstoqueService` mantém a lista de observadores (`adicionarObservador` / `removerObservador`) e chama `notificarAlteracao()` **somente após** a operação ter sido concluída com sucesso, ou seja, depois de gravada no arquivo.
+- *Observador concreto:* a `App` se registra com `controller.adicionarObservador(this::atualizarTabela)`.
+
+**Por que é adequado.** O serviço não conhece JavaFX, apenas avisa que algo mudou; a camada de negócio continua independente da interface. Como a notificação não acontece quando a operação falha, a tela nunca mostra um estado que não foi salvo. Outros observadores (um log, um alerta de estoque baixo) podem ser adicionados sem modificar o serviço. Coberto pelo teste *"notifica observadores após alterações bem-sucedidas"* em `EstoqueServiceTest`.
+
+### 3. Factory Method — criação de veículos
+
+**Problema.** Veículos são criados a partir de texto em dois lugares: no formulário da `App` (campos digitados) e na leitura do `dados/veiculos.properties`. Antes da refatoração, cada lugar tinha seu próprio `if`/`switch` para decidir entre `Carro` e `Caminhonete`, sua própria conversão do campo específico (portas ou capacidade de carga) e cadeias de `instanceof` para fazer o caminho inverso (preencher o formulário de edição e gravar o arquivo). Incluir um novo tipo, como `Moto`, exigiria alterar todos esses pontos.
+
+**Aplicação.**
+- *Creator:* `VeiculoFactory` (abstrata). O método público `criar(...)` converte os dados comuns (ano e preço, com `ConversorNumero`) e chama o **método-fábrica** `instanciar(...)`, que é abstrato.
+- *Concrete Creators:* `CarroFactory` e `CaminhoneteFactory` implementam `instanciar(...)`, convertem o detalhe do seu tipo e informam o rótulo do campo (`getRotuloDetalhe()`) e o detalhe em texto (`detalheComoTexto(...)`).
+- *Products:* `Carro` e `Caminhonete` (subclasses de `Veiculo`).
+- *Clientes:* `App` (tipos do combo, rótulo do campo, valor na edição e criação do veículo) e `VeiculoRepositoryArquivo` (leitura e gravação), que usam apenas `VeiculoFactory.paraTipo(...)` e `VeiculoFactory.paraVeiculo(...)`.
+
+```java
+// Antes, na App e, de forma parecida, no repositório em arquivo
+return tipo.getValue().equals("Carro")
+        ? new Carro(chassi, modelo, marca, ano, preco, ConversorNumero.paraInteiro(detalhe, "Número de portas"))
+        : new Caminhonete(chassi, modelo, marca, ano, preco, ConversorNumero.paraDecimal(detalhe, "Capacidade de carga"));
+
+// Depois
+return VeiculoFactory.paraTipo(tipo.getValue()).criar(chassi, modelo, marca, ano, preco, detalhe);
+```
+
+**Por que é adequado.** A decisão de qual classe instanciar fica em um único lugar, e a interface gráfica e o repositório deixaram de conhecer as classes concretas: não há mais `instanceof` de `Carro`/`Caminhonete` nesses arquivos. Para criar um novo tipo basta escrever uma nova subclasse de `Veiculo`, uma nova fábrica e registrá-la em `VeiculoFactory`. O combo da tela, o rótulo do campo e o arquivo passam a aceitá-lo automaticamente. As mensagens de validação ficam iguais no formulário e na leitura do arquivo. Coberto por `factory/VeiculoFactoryTest`.
+
+### Documentação (Javadoc)
+
+Todas as classes e todos os métodos e construtores públicos e protegidos possuem Javadoc com descrição, `@param`, `@return` e `@throws` quando aplicável. A documentação foi verificada com o *doclint* do JDK (`javadoc -Xdoclint:all`), sem avisos.
 
 ## Funcionalidades
 
@@ -113,7 +165,7 @@ As mensagens indicam o campo ou o chassi envolvido (ex.: *"Ano deve ser um núme
 
 ### Testes unitários
 
-38 testes JUnit 5, organizados no mesmo pacote da classe testada e documentados com `@DisplayName`:
+42 testes JUnit 5, organizados no mesmo pacote da classe testada e documentados com `@DisplayName`:
 
 | Classe de teste | O que cobre |
 |---|---|
@@ -122,6 +174,7 @@ As mensagens indicam o campo ou o chassi envolvido (ex.: *"Ano deve ser um núme
 | `repository/VeiculoRepositoryArquivoTest` | Gravação e leitura, pasta criada automaticamente, arquivo corrompido, falha de gravação desfeita |
 | `service/EstoqueServiceTest` | Valor total, pesquisa, marcas (Set), contagem por tipo (Map), exceções |
 | `service/VendaServiceTest` | Venda com desconto, veículo inexistente, venda sem cliente, período inválido |
+| `factory/VeiculoFactoryTest` | Escolha da fábrica pelo tipo, criação a partir de texto, conversão inversa, tipo desconhecido |
 | `util/ConversorNumeroTest` | Formatos de número, mensagens de erro e o caso do preço na edição |
 
 Execute com `mvn test`.

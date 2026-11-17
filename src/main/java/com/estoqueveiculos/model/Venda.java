@@ -14,7 +14,14 @@ public class Venda {
     private final LocalDate dataVenda;
     private final double valorFinal;
 
-    /** Cria uma venda e calcula seu valor final com o desconto do veículo. */
+    /**
+     * Cria uma venda e calcula seu valor final com o desconto do veículo.
+     * @param id identificador numérico
+     * @param veiculo veículo vendido
+     * @param cliente cliente comprador
+     * @param vendedor vendedor responsável
+     * @param dataVenda data em que a venda ocorreu
+     */
     public Venda(int id, Veiculo veiculo, Cliente cliente, Vendedor vendedor,
                  LocalDate dataVenda) {
         if (veiculo == null || cliente == null || vendedor == null || dataVenda == null) {
@@ -28,37 +35,58 @@ public class Venda {
         this.valorFinal = veiculo.getPreco() - veiculo.calcularDesconto();
     }
 
-    /** Retorna o identificador da venda. */
+    /**
+     * Retorna o identificador da venda.
+     * @return o identificador da venda
+     */
     public int getId() {
         return id;
     }
 
-    /** Retorna o veículo vendido. */
+    /**
+     * Retorna o veículo vendido.
+     * @return o veículo vendido
+     */
     public Veiculo getVeiculo() {
         return veiculo;
     }
 
-    /** Retorna o cliente comprador. */
+    /**
+     * Retorna o cliente comprador.
+     * @return o cliente comprador
+     */
     public Cliente getCliente() {
         return cliente;
     }
 
-    /** Retorna o vendedor responsável. */
+    /**
+     * Retorna o vendedor responsável.
+     * @return o vendedor responsável
+     */
     public Vendedor getVendedor() {
         return vendedor;
     }
 
-    /** Retorna a data da venda. */
+    /**
+     * Retorna a data da venda.
+     * @return a data da venda
+     */
     public LocalDate getDataVenda() {
         return dataVenda;
     }
 
-    /** Retorna o valor final após aplicar o desconto. */
+    /**
+     * Retorna o valor final após aplicar o desconto.
+     * @return o valor final após aplicar o desconto
+     */
     public double getValorFinal() {
         return valorFinal;
     }
 
-    /** Retorna um resumo da venda em formato textual. */
+    /**
+     * Retorna um resumo da venda em formato textual.
+     * @return um resumo da venda em formato textual
+     */
     @Override
     public String toString() {
         return String.format("Venda #%d - %s -> %s (R$ %.2f) em %s",

@@ -19,6 +19,10 @@ import java.util.Map;
 public class VeiculoRepositoryMemoria implements IVeiculoRepository {
     private final Map<String, Veiculo> veiculos = new LinkedHashMap<>();
 
+    /** Cria um repositório vazio, mantido apenas em memória. */
+    public VeiculoRepositoryMemoria() {
+    }
+
     /** {@inheritDoc} */
     @Override
     public void salvar(Veiculo veiculo) {
@@ -55,12 +59,18 @@ public class VeiculoRepositoryMemoria implements IVeiculoRepository {
         if (veiculos.remove(chassi) == null) throw new VeiculoNaoEncontradoException(chassi);
     }
 
-    /** Cópia do estado atual, usada pelas subclasses para desfazer uma operação que falhou. */
+    /**
+     * Cópia do estado atual, usada pelas subclasses para desfazer uma operação que falhou.
+     * @return cópia dos dados atuais
+     */
     protected Map<String, Veiculo> copiarDados() {
         return new LinkedHashMap<>(veiculos);
     }
 
-    /** Restaura um estado copiado anteriormente com {@link #copiarDados()}. */
+    /**
+     * Restaura um estado copiado anteriormente com {@link #copiarDados()}.
+     * @param estadoAnterior cópia dos dados antes da alteração
+     */
     protected void restaurarDados(Map<String, Veiculo> estadoAnterior) {
         veiculos.clear();
         veiculos.putAll(estadoAnterior);

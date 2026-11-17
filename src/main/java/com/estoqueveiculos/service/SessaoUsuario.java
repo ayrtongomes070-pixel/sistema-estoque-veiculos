@@ -10,7 +10,10 @@ public class SessaoUsuario {
     private SessaoUsuario() {
     }
 
-    /** Define o vendedor atualmente autenticado. */
+    /**
+     * Define o vendedor atualmente autenticado.
+     * @param vendedor vendedor responsável
+     */
     public static void login(Vendedor vendedor) {
         vendedorLogado = vendedor;
     }
@@ -20,12 +23,18 @@ public class SessaoUsuario {
         vendedorLogado = null;
     }
 
-    /** Retorna o vendedor da sessão ou {@code null} se ninguém estiver autenticado. */
+    /**
+     * Retorna o vendedor da sessão ou {@code null} se ninguém estiver autenticado.
+     * @return o vendedor da sessão ou {@code null} se ninguém estiver autenticado
+     */
     public static Vendedor getVendedorLogado() {
         return vendedorLogado;
     }
 
-    /** Informa se existe um vendedor autenticado. */
+    /**
+     * Informa se existe um vendedor autenticado.
+     * @return {@code true} se houver vendedor autenticado
+     */
     public static boolean estaLogado() {
         return vendedorLogado != null;
     }

@@ -4,8 +4,7 @@ import com.estoqueveiculos.exception.DadosInvalidosException;
 import com.estoqueveiculos.exception.ErroPersistenciaException;
 import com.estoqueveiculos.exception.VeiculoDuplicadoException;
 import com.estoqueveiculos.exception.VeiculoNaoEncontradoException;
-import com.estoqueveiculos.model.Caminhonete;
-import com.estoqueveiculos.model.Carro;
+import com.estoqueveiculos.factory.VeiculoFactory;
 import com.estoqueveiculos.model.Veiculo;
 
 import java.io.IOException;
@@ -25,14 +24,15 @@ import java.util.Properties;
  * Reaproveita as regras do {@link VeiculoRepositoryMemoria} e, a cada alteração,
  * grava o estoque inteiro no arquivo. Se a gravação falhar, a alteração é desfeita
  * em memória para que tela e arquivo nunca fiquem diferentes.
+ * <p>
+ * A conversão entre registro do arquivo e objeto é delegada ao {@link VeiculoFactory}
+ * (padrão Factory Method), por isso esta classe não conhece os tipos concretos de veículo.
  */
 public class VeiculoRepositoryArquivo extends VeiculoRepositoryMemoria {
-    private static final String TIPO_CARRO = "CARRO";
-    private static final String TIPO_CAMINHONETE = "CAMINHONETE";
-
     private final Path arquivo;
 
-    /** Abre o arquivo local e carrega os registros de veículos existentes.
+    /**
+     * Abre o arquivo local e carrega os registros de veículos existentes.
      * @param arquivo caminho do arquivo Properties a ser usado
      * @throws DadosInvalidosException se o caminho for nulo ou o arquivo tiver dados inválidos
      * @throws ErroPersistenciaException se o arquivo não puder ser lido
@@ -95,15 +95,11 @@ public class VeiculoRepositoryArquivo extends VeiculoRepositoryMemoria {
         String chassi = obrigatoria(propriedades, prefixo + "chassi");
         String marca = obrigatoria(propriedades, prefixo + "marca");
         String modelo = obrigatoria(propriedades, prefixo + "modelo");
-        int ano = Integer.parseInt(obrigatoria(propriedades, prefixo + "ano"));
-        double preco = Double.parseDouble(obrigatoria(propriedades, prefixo + "preco"));
+        String ano = obrigatoria(propriedades, prefixo + "ano");
+        String preco = obrigatoria(propriedades, prefixo + "preco");
         String detalhe = obrigatoria(propriedades, prefixo + "detalhe");
 
-        return switch (tipo) {
-            case TIPO_CARRO -> new Carro(chassi, modelo, marca, ano, preco, Integer.parseInt(detalhe));
-            case TIPO_CAMINHONETE -> new Caminhonete(chassi, modelo, marca, ano, preco, Double.parseDouble(detalhe));
-            default -> throw new DadosInvalidosException("tipo de veículo desconhecido no registro " + indice);
-        };
+        return VeiculoFactory.paraTipo(tipo).criar(chassi, modelo, marca, ano, preco, detalhe);
     }
 
     private String obrigatoria(Properties propriedades, String chave) {
@@ -159,14 +155,8 @@ public class VeiculoRepositoryArquivo extends VeiculoRepositoryMemoria {
             propriedades.setProperty(prefixo + "modelo", veiculo.getModelo());
             propriedades.setProperty(prefixo + "ano", String.valueOf(veiculo.getAnoFabricacao()));
             propriedades.setProperty(prefixo + "preco", String.valueOf(veiculo.getPreco()));
-            propriedades.setProperty(prefixo + "detalhe", detalheBruto(veiculo));
+            propriedades.setProperty(prefixo + "detalhe", VeiculoFactory.paraVeiculo(veiculo).detalheComoTexto(veiculo));
         }
         return propriedades;
-    }
-
-    private static String detalheBruto(Veiculo veiculo) {
-        if (veiculo instanceof Carro carro) return String.valueOf(carro.getNumeroPortas());
-        if (veiculo instanceof Caminhonete caminhonete) return String.valueOf(caminhonete.getCapacidadeCargaKg());
-        throw new DadosInvalidosException("Tipo de veículo não suportado: " + veiculo.getClass().getSimpleName());
     }
 }

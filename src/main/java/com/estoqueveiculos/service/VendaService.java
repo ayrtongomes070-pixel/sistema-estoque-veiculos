@@ -21,13 +21,21 @@ public class VendaService {
     private final List<Venda> vendas = new ArrayList<>();
     private int proximoId = 1;
 
-    /** Cria o serviço de vendas associado à estratégia de persistência dos veículos. */
+    /**
+     * Cria o serviço de vendas associado à estratégia de persistência dos veículos.
+     * @param veiculoRepository estratégia de persistência de veículos
+     */
     public VendaService(IVeiculoRepository veiculoRepository) {
         if (veiculoRepository == null) throw new DadosInvalidosException("Repositório de veículos é obrigatório.");
         this.veiculoRepository = veiculoRepository;
     }
 
-    /** Registra uma venda e remove o veículo vendido do estoque.
+    /**
+     * Registra uma venda e remove o veículo vendido do estoque.
+     * @param chassi chassi que identifica o veículo
+     * @param cliente cliente comprador
+     * @param vendedor vendedor responsável
+     * @return venda registrada
      * @throws VeiculoNaoEncontradoException se o chassi não existir no estoque
      */
     public Venda registrarVenda(String chassi, Cliente cliente, Vendedor vendedor)
@@ -39,12 +47,19 @@ public class VendaService {
         return venda;
     }
 
-    /** Retorna uma lista não modificável das vendas desta execução. */
+    /**
+     * Retorna uma lista não modificável das vendas desta execução.
+     * @return lista não modificável das vendas
+     */
     public List<Venda> listarVendas() {
         return Collections.unmodifiableList(new ArrayList<>(vendas));
     }
 
-    /** Soma os valores finais das vendas no período informado, incluindo as datas-limite.
+    /**
+     * Soma os valores finais das vendas no período informado, incluindo as datas-limite.
+     * @param inicio data inicial do período (inclusive)
+     * @param fim data final do período (inclusive)
+     * @return soma dos valores finais no período
      * @throws IllegalArgumentException se as datas forem nulas ou o período estiver invertido
      */
     public double totalVendidoNoPeriodo(LocalDate inicio, LocalDate fim) {

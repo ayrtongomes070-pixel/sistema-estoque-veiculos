@@ -49,7 +49,11 @@ public final class ConversorNumero {
         }
     }
 
-    /** Formata um decimal para exibição num campo editável (ex.: 89900.0 -> "89900,00"). */
+    /**
+     * Formata um decimal para exibição num campo editável (ex.: 89900.0 -> "89900,00").
+     * @param valor número a formatar
+     * @return texto no formato brasileiro com duas casas decimais
+     */
     public static String paraTexto(double valor) {
         return String.format(PT_BR, "%.2f", valor);
     }

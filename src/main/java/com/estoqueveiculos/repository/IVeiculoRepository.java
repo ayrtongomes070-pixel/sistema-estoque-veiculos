@@ -25,7 +25,9 @@ public interface IVeiculoRepository {
      */
     Veiculo buscarPorChassi(String chassi) throws VeiculoNaoEncontradoException;
 
-    /** Retorna uma cópia da lista de veículos armazenados. */
+    /** Retorna uma cópia da lista de veículos armazenados.
+     * @return veículos na ordem de cadastro
+     */
     List<Veiculo> listarTodos();
 
     /** Atualiza um veículo já cadastrado.

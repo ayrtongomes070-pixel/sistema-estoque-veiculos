@@ -15,6 +15,10 @@ public class VeiculoRepositoryJDBC implements IVeiculoRepository {
     private static final String MENSAGEM =
             "Persistência em MySQL ainda não implementada. Use VeiculoRepositoryArquivo.";
 
+    /** Cria o repositório JDBC (ainda sem implementação das operações). */
+    public VeiculoRepositoryJDBC() {
+    }
+
     /** {@inheritDoc} */
     @Override
     public void salvar(Veiculo veiculo) {

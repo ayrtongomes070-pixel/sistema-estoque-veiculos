@@ -10,6 +10,9 @@ import java.util.Properties;
 /** Utilitário para abrir uma conexão MySQL configurada em {@code db.properties}. */
 public class ConexaoBD {
 
+    private ConexaoBD() {
+    }
+
     private static Properties carregarProperties() throws IOException {
         Properties props = new Properties();
         try (InputStream input = ConexaoBD.class.getClassLoader()

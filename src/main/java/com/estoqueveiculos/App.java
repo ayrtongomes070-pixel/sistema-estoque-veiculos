@@ -4,6 +4,7 @@ import com.estoqueveiculos.controller.EstoqueController;
 import com.estoqueveiculos.exception.ErroPersistenciaException;
 import com.estoqueveiculos.exception.VeiculoDuplicadoException;
 import com.estoqueveiculos.exception.VeiculoNaoEncontradoException;
+import com.estoqueveiculos.factory.VeiculoFactory;
 import com.estoqueveiculos.model.Caminhonete;
 import com.estoqueveiculos.model.Carro;
 import com.estoqueveiculos.model.Veiculo;
@@ -28,6 +29,7 @@ import java.util.Optional;
 
 /** Aplicação desktop StockMaster; a tela observa alterações do estoque. */
 public class App extends Application {
+
     private EstoqueController controller;
     private final TableView<Veiculo> tabela = new TableView<>();
     private final Label quantidade = new Label("0");
@@ -35,6 +37,10 @@ public class App extends Application {
     private final Label marcas = new Label("0");
     private final TextField busca = new TextField();
     private final NumberFormat moeda = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR"));
+
+    /** Construtor usado pelo JavaFX ao iniciar a aplicação. */
+    public App() {
+    }
 
     /** Inicializa persistência, tela e observador de mudanças do estoque.
      * @param stage janela principal fornecida pelo JavaFX
@@ -129,28 +135,27 @@ public class App extends Application {
     private void abrirFormulario(Veiculo atual) {
         Dialog<Veiculo> dialog = new Dialog<>(); dialog.setTitle(atual == null ? "Cadastrar veículo" : "Editar veículo"); dialog.setHeaderText("Preencha as informações do veículo");
         ButtonType salvar = new ButtonType("Salvar", ButtonBar.ButtonData.OK_DONE); dialog.getDialogPane().getButtonTypes().addAll(salvar, ButtonType.CANCEL);
-        ComboBox<String> tipo = new ComboBox<>(FXCollections.observableArrayList("Carro", "Caminhonete")); tipo.setValue(atual instanceof Caminhonete ? "Caminhonete" : "Carro");
+        // Factory Method: os tipos, rótulos e conversões vêm das fábricas, sem instanceof na tela
+        ComboBox<String> tipo = new ComboBox<>(FXCollections.observableArrayList(VeiculoFactory.tiposDisponiveis()));
+        tipo.setValue(atual == null ? VeiculoFactory.tiposDisponiveis().get(0) : atual.getTipo());
         TextField chassi = campo(atual == null ? null : atual.getChassi(), "Ex.: 9BWZZZ377VT004251"); chassi.setDisable(atual != null);
         TextField marca = campo(atual == null ? null : atual.getMarca(), "Ex.: Volkswagen");
         TextField modelo = campo(atual == null ? null : atual.getModelo(), "Ex.: Polo");
         TextField ano = campo(atual == null ? null : String.valueOf(atual.getAnoFabricacao()), "Ex.: 2024");
         // Preço e carga são exibidos no formato brasileiro ("89900,00"), o mesmo que o ConversorNumero lê de volta
         TextField preco = campo(atual == null ? null : ConversorNumero.paraTexto(atual.getPreco()), "Ex.: 85000,00");
-        TextField detalhe = campo(atual instanceof Carro c ? String.valueOf(c.getNumeroPortas()) : atual instanceof Caminhonete c ? ConversorNumero.paraTexto(c.getCapacidadeCargaKg()) : null, "Ex.: 4");
-        Label detalheLabel = new Label("Número de portas");
-        Runnable ajustar = () -> detalheLabel.setText(tipo.getValue().equals("Carro") ? "Número de portas" : "Capacidade (kg)"); tipo.valueProperty().addListener((o,a,b) -> ajustar.run());
+        TextField detalhe = campo(atual == null ? null : VeiculoFactory.paraVeiculo(atual).detalheComoTexto(atual), "Ex.: 4");
+        Label detalheLabel = new Label();
+        Runnable ajustar = () -> detalheLabel.setText(VeiculoFactory.paraTipo(tipo.getValue()).getRotuloDetalhe());
+        ajustar.run(); tipo.valueProperty().addListener((o,a,b) -> ajustar.run());
         GridPane grid = new GridPane(); grid.setHgap(12); grid.setVgap(10); grid.addRow(0, new Label("Tipo"), tipo); grid.addRow(1, new Label("Chassi"), chassi); grid.addRow(2, new Label("Marca"), marca); grid.addRow(3, new Label("Modelo"), modelo); grid.addRow(4, new Label("Ano"), ano); grid.addRow(5, new Label("Preço (R$)"), preco); grid.addRow(6, detalheLabel, detalhe);
         grid.getColumnConstraints().addAll(new ColumnConstraints(125), new ColumnConstraints(260)); dialog.getDialogPane().setContent(grid);
         dialog.getDialogPane().lookupButton(salvar).disableProperty().bind(chassi.textProperty().isEmpty().or(marca.textProperty().isEmpty()).or(modelo.textProperty().isEmpty()).or(ano.textProperty().isEmpty()).or(preco.textProperty().isEmpty()).or(detalhe.textProperty().isEmpty()));
         dialog.setResultConverter(bt -> {
             if (bt != salvar) return null;
             try {
-                String placaChassi = chassi.getText().trim();
-                int anoNum = ConversorNumero.paraInteiro(ano.getText(), "Ano");
-                double precoNum = ConversorNumero.paraDecimal(preco.getText(), "Preço");
-                return tipo.getValue().equals("Carro")
-                        ? new Carro(placaChassi, modelo.getText(), marca.getText(), anoNum, precoNum, ConversorNumero.paraInteiro(detalhe.getText(), "Número de portas"))
-                        : new Caminhonete(placaChassi, modelo.getText(), marca.getText(), anoNum, precoNum, ConversorNumero.paraDecimal(detalhe.getText(), "Capacidade de carga"));
+                return VeiculoFactory.paraTipo(tipo.getValue()).criar(chassi.getText().trim(), modelo.getText(), marca.getText(),
+                        ano.getText(), preco.getText(), detalhe.getText());
             } catch (IllegalArgumentException ex) { aviso(ex.getMessage()); return null; } // inclui DadosInvalidosException
         });
         Optional<Veiculo> resultado = dialog.showAndWait();
