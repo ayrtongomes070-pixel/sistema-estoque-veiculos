@@ -43,6 +43,7 @@ public class VeiculoRepositoryArquivo extends VeiculoRepositoryMemoria {
         carregar();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void salvar(Veiculo veiculo) {
         Map<String, Veiculo> anterior = copiarDados();
@@ -50,6 +51,7 @@ public class VeiculoRepositoryArquivo extends VeiculoRepositoryMemoria {
         gravarOuDesfazer(anterior);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void atualizar(Veiculo veiculo) throws VeiculoNaoEncontradoException {
         Map<String, Veiculo> anterior = copiarDados();
@@ -57,6 +59,7 @@ public class VeiculoRepositoryArquivo extends VeiculoRepositoryMemoria {
         gravarOuDesfazer(anterior);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void remover(String chassi) throws VeiculoNaoEncontradoException {
         Map<String, Veiculo> anterior = copiarDados();

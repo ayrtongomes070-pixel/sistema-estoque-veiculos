@@ -16,6 +16,12 @@ public final class ConversorNumero {
     private ConversorNumero() {
     }
 
+    /** Converte um texto em inteiro, informando o nome do campo em caso de erro.
+     * @param texto conteúdo digitado
+     * @param campo nome do campo para a mensagem de validação
+     * @return número inteiro convertido
+     * @throws DadosInvalidosException se o campo estiver vazio ou não representar um inteiro
+     */
     public static int paraInteiro(String texto, String campo) {
         String valor = normalizar(texto, campo);
         try {
@@ -25,6 +31,12 @@ public final class ConversorNumero {
         }
     }
 
+    /** Converte um texto em decimal, aceitando formatos brasileiro e com ponto decimal.
+     * @param texto conteúdo digitado
+     * @param campo nome do campo para a mensagem de validação
+     * @return número decimal convertido
+     * @throws DadosInvalidosException se o campo estiver vazio ou não representar um número
+     */
     public static double paraDecimal(String texto, String campo) {
         String valor = normalizar(texto, campo);
         String convertido = valor.contains(",")

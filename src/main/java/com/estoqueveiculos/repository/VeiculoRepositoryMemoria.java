@@ -19,6 +19,7 @@ import java.util.Map;
 public class VeiculoRepositoryMemoria implements IVeiculoRepository {
     private final Map<String, Veiculo> veiculos = new LinkedHashMap<>();
 
+    /** {@inheritDoc} */
     @Override
     public void salvar(Veiculo veiculo) {
         validar(veiculo);
@@ -26,6 +27,7 @@ public class VeiculoRepositoryMemoria implements IVeiculoRepository {
         veiculos.put(veiculo.getChassi(), veiculo);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Veiculo buscarPorChassi(String chassi) throws VeiculoNaoEncontradoException {
         Veiculo veiculo = veiculos.get(chassi);
@@ -33,11 +35,13 @@ public class VeiculoRepositoryMemoria implements IVeiculoRepository {
         return veiculo;
     }
 
+    /** {@inheritDoc} */
     @Override
     public List<Veiculo> listarTodos() {
         return new ArrayList<>(veiculos.values());
     }
 
+    /** {@inheritDoc} */
     @Override
     public void atualizar(Veiculo veiculo) throws VeiculoNaoEncontradoException {
         validar(veiculo);
@@ -45,6 +49,7 @@ public class VeiculoRepositoryMemoria implements IVeiculoRepository {
         veiculos.put(veiculo.getChassi(), veiculo);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void remover(String chassi) throws VeiculoNaoEncontradoException {
         if (veiculos.remove(chassi) == null) throw new VeiculoNaoEncontradoException(chassi);

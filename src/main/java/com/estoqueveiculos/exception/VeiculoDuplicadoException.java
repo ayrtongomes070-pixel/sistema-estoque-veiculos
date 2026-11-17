@@ -4,6 +4,9 @@ package com.estoqueveiculos.exception;
 public class VeiculoDuplicadoException extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
+    /** Cria a exceção para um chassi já cadastrado.
+     * @param chassi identificador duplicado
+     */
     public VeiculoDuplicadoException(String chassi) {
         super("Já existe um veículo cadastrado com o chassi '" + chassi + "'.");
     }

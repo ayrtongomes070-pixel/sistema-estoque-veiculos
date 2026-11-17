@@ -15,26 +15,31 @@ public class VeiculoRepositoryJDBC implements IVeiculoRepository {
     private static final String MENSAGEM =
             "Persistência em MySQL ainda não implementada. Use VeiculoRepositoryArquivo.";
 
+    /** {@inheritDoc} */
     @Override
     public void salvar(Veiculo veiculo) {
         throw new UnsupportedOperationException(MENSAGEM);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Veiculo buscarPorChassi(String chassi) {
         throw new UnsupportedOperationException(MENSAGEM);
     }
 
+    /** {@inheritDoc} */
     @Override
     public List<Veiculo> listarTodos() {
         throw new UnsupportedOperationException(MENSAGEM);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void atualizar(Veiculo veiculo) {
         throw new UnsupportedOperationException(MENSAGEM);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void remover(String chassi) {
         throw new UnsupportedOperationException(MENSAGEM);

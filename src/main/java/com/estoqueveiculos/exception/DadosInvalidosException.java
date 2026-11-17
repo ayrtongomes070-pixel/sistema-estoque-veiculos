@@ -7,6 +7,9 @@ package com.estoqueveiculos.exception;
 public class DadosInvalidosException extends IllegalArgumentException {
     private static final long serialVersionUID = 1L;
 
+    /** Cria a exceção com uma explicação adequada para o dado inválido.
+     * @param mensagem descrição do erro
+     */
     public DadosInvalidosException(String mensagem) {
         super(mensagem);
     }
