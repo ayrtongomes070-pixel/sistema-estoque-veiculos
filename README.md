@@ -111,6 +111,7 @@ Todas as classes e todos os métodos e construtores públicos e protegidos possu
 ## Funcionalidades
 
 - Listagem e pesquisa por marca, modelo ou chassi
+- Foto opcional por veículo, exibida em miniatura; clique na miniatura para ampliar
 - Cadastro de carros e caminhonetes
 - Edição e remoção (com confirmação) de veículos
 - Resumo com quantidade de veículos, valor total do estoque e número de marcas
@@ -127,6 +128,7 @@ Todas as classes e todos os métodos e construtores públicos e protegidos possu
 - **RF06:** Exibir a quantidade de veículos, o valor total do estoque e a quantidade de marcas.
 - **RF07:** Salvar alterações no arquivo local e recuperar os veículos ao iniciar o sistema novamente.
 - **RF08:** Validar os dados informados e avisar o usuário quando houver campos inválidos ou uma operação não puder ser concluída.
+- **RF09:** Permitir associar uma imagem ao veículo, exibi-la em miniatura na listagem e ampliá-la ao clicar.
 
 ## Requisitos não funcionais
 
@@ -162,6 +164,8 @@ As mensagens indicam o campo ou o chassi envolvido (ex.: *"Ano deve ser um núme
 ### Leitura e escrita de arquivos
 
 `VeiculoRepositoryArquivo` usa `java.nio.file` e `Properties` (UTF-8). Ele grava primeiro em um arquivo temporário e depois o move por cima do original, para que o arquivo nunca fique gravado pela metade. A leitura valida cada registro e informa exatamente o que está corrompido.
+
+As fotos selecionadas são copiadas para `dados/imagens/`; o arquivo de estoque guarda o caminho relativo. Fotos e dados locais ficam fora do Git, e registros antigos sem foto continuam sendo carregados normalmente.
 
 ### Testes unitários
 

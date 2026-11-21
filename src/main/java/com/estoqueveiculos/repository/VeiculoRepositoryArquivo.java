@@ -99,7 +99,9 @@ public class VeiculoRepositoryArquivo extends VeiculoRepositoryMemoria {
         String preco = obrigatoria(propriedades, prefixo + "preco");
         String detalhe = obrigatoria(propriedades, prefixo + "detalhe");
 
-        return VeiculoFactory.paraTipo(tipo).criar(chassi, modelo, marca, ano, preco, detalhe);
+        Veiculo veiculo = VeiculoFactory.paraTipo(tipo).criar(chassi, modelo, marca, ano, preco, detalhe);
+        veiculo.setCaminhoImagem(propriedades.getProperty(prefixo + "imagem"));
+        return veiculo;
     }
 
     private String obrigatoria(Properties propriedades, String chave) {
@@ -156,6 +158,9 @@ public class VeiculoRepositoryArquivo extends VeiculoRepositoryMemoria {
             propriedades.setProperty(prefixo + "ano", String.valueOf(veiculo.getAnoFabricacao()));
             propriedades.setProperty(prefixo + "preco", String.valueOf(veiculo.getPreco()));
             propriedades.setProperty(prefixo + "detalhe", VeiculoFactory.paraVeiculo(veiculo).detalheComoTexto(veiculo));
+            if (veiculo.getCaminhoImagem() != null) {
+                propriedades.setProperty(prefixo + "imagem", veiculo.getCaminhoImagem());
+            }
         }
         return propriedades;
     }

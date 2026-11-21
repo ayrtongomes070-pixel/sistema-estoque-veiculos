@@ -35,3 +35,4 @@ src/main/resources/db.properties
 
 # Dados locais gerados durante a execução
 /dados/veiculos.properties
+/dados/imagens/

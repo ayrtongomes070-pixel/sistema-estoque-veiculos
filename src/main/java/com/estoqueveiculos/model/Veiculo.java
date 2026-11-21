@@ -18,6 +18,7 @@ public abstract class Veiculo {
     private String marca;
     private int anoFabricacao;
     private double preco;
+    private String caminhoImagem;
 
     /**
      * Inicializa os dados comuns a todos os veículos, validando cada campo.
@@ -142,6 +143,23 @@ public abstract class Veiculo {
     public void setPreco(double preco) {
         validarPreco(preco);
         this.preco = preco;
+    }
+
+    /**
+     * Retorna o caminho relativo da imagem associada ao veículo, se houver.
+     * @return caminho relativo da imagem ou {@code null} quando não há foto
+     */
+    public String getCaminhoImagem() {
+        return caminhoImagem;
+    }
+
+    /**
+     * Define o caminho relativo da imagem associada ao veículo.
+     * @param caminhoImagem caminho relativo da imagem, ou {@code null} para remover a associação
+     */
+    public void setCaminhoImagem(String caminhoImagem) {
+        this.caminhoImagem = caminhoImagem == null || caminhoImagem.isBlank()
+                ? null : caminhoImagem.trim();
     }
 
     private static void validarTexto(String valor, String campo) {

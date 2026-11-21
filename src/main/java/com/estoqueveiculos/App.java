@@ -10,17 +10,23 @@ import com.estoqueveiculos.model.Carro;
 import com.estoqueveiculos.model.Veiculo;
 import com.estoqueveiculos.repository.VeiculoRepositoryArquivo;
 import com.estoqueveiculos.service.EstoqueService;
+import com.estoqueveiculos.util.ArmazenadorImagens;
 import com.estoqueveiculos.util.ConversorNumero;
 import javafx.application.Application;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
+import java.io.File;
 import java.text.NumberFormat;
 import java.nio.file.Path;
 import java.nio.file.Files;
@@ -112,12 +118,66 @@ public class App extends Application {
         tabela.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         tabela.setPlaceholder(new Label("Nenhum veículo encontrado. Cadastre o primeiro veículo."));
         tabela.setPrefHeight(370);
-        tabela.getColumns().setAll(coluna("TIPO", Veiculo::getTipo, 105),
+        tabela.setFixedCellSize(58);
+        tabela.getColumns().setAll(colunaFoto(),
+                coluna("TIPO", Veiculo::getTipo, 95),
                 coluna("MARCA / MODELO", v -> v.getMarca() + " " + v.getModelo(), 230),
                 coluna("ANO", v -> String.valueOf(v.getAnoFabricacao()), 75),
                 coluna("CHASSI", Veiculo::getChassi, 190),
                 coluna("DETALHES", Veiculo::getDescricaoDetalhe, 140),
                 coluna("PREÇO", v -> moeda.format(v.getPreco()), 130));
+    }
+
+    private TableColumn<Veiculo, Veiculo> colunaFoto() {
+        TableColumn<Veiculo, Veiculo> coluna = new TableColumn<>("FOTO");
+        coluna.setCellValueFactory(dados -> new ReadOnlyObjectWrapper<>(dados.getValue()));
+        coluna.setCellFactory(ignorada -> new TableCell<>() {
+            private final ImageView miniatura = new ImageView();
+            private final Label semFoto = new Label("Sem foto");
+
+            {
+                setAlignment(Pos.CENTER);
+                miniatura.setFitWidth(72);
+                miniatura.setFitHeight(46);
+                miniatura.setPreserveRatio(true);
+                miniatura.setSmooth(true);
+                semFoto.setStyle("-fx-text-fill: #8a98aa; -fx-font-size: 10px;");
+                setOnMouseClicked(event -> {
+                    Veiculo veiculo = getItem();
+                    if (!isEmpty() && veiculo != null && veiculo.getCaminhoImagem() != null) {
+                        abrirFoto(veiculo);
+                    }
+                });
+            }
+
+            @Override
+            protected void updateItem(Veiculo veiculo, boolean vazio) {
+                super.updateItem(veiculo, vazio);
+                setText(null);
+                if (vazio || veiculo == null) {
+                    setGraphic(null);
+                    setTooltip(null);
+                    return;
+                }
+
+                Path caminho = ArmazenadorImagens.resolver(veiculo.getCaminhoImagem());
+                if (caminho != null && Files.isRegularFile(caminho)) {
+                    Image imagem = new Image(caminho.toUri().toString(), 72, 46, true, true, true);
+                    if (!imagem.isError()) {
+                        miniatura.setImage(imagem);
+                        setGraphic(miniatura);
+                        setTooltip(new Tooltip("Clique para ampliar a foto"));
+                        return;
+                    }
+                }
+                setGraphic(semFoto);
+                setTooltip(null);
+            }
+        });
+        coluna.setPrefWidth(90);
+        coluna.setMinWidth(82);
+        coluna.setMaxWidth(100);
+        return coluna;
     }
 
     private TableColumn<Veiculo, String> coluna(String titulo, java.util.function.Function<Veiculo, String> valor, double largura) {
@@ -145,18 +205,54 @@ public class App extends Application {
         // Preço e carga são exibidos no formato brasileiro ("89900,00"), o mesmo que o ConversorNumero lê de volta
         TextField preco = campo(atual == null ? null : ConversorNumero.paraTexto(atual.getPreco()), "Ex.: 85000,00");
         TextField detalhe = campo(atual == null ? null : VeiculoFactory.paraVeiculo(atual).detalheComoTexto(atual), "Ex.: 4");
+        TextField foto = campo(atual == null ? "" : atual.getCaminhoImagem(), "Nenhuma foto selecionada");
+        foto.setEditable(false);
+        foto.setPrefWidth(210);
+        Path[] novaFoto = {null};
+        boolean[] removerFoto = {false};
+        Button escolherFoto = new Button("Escolher...");
+        escolherFoto.setOnAction(evento -> {
+            FileChooser seletor = new FileChooser();
+            seletor.setTitle("Escolher foto do veículo");
+            seletor.getExtensionFilters().add(new FileChooser.ExtensionFilter(
+                    "Imagens", "*.jpg", "*.jpeg", "*.png", "*.gif", "*.bmp"));
+            File arquivo = seletor.showOpenDialog(dialog.getDialogPane().getScene().getWindow());
+            if (arquivo != null) {
+                novaFoto[0] = arquivo.toPath();
+                removerFoto[0] = false;
+                foto.setText(arquivo.getName());
+            }
+        });
+        Button limparFoto = new Button("Remover foto");
+        limparFoto.setOnAction(evento -> {
+            novaFoto[0] = null;
+            removerFoto[0] = true;
+            foto.clear();
+        });
+        HBox campoFoto = new HBox(8, foto, escolherFoto, limparFoto);
+        campoFoto.setAlignment(Pos.CENTER_LEFT);
+        GridPane.setHgrow(campoFoto, Priority.ALWAYS);
         Label detalheLabel = new Label();
         Runnable ajustar = () -> detalheLabel.setText(VeiculoFactory.paraTipo(tipo.getValue()).getRotuloDetalhe());
         ajustar.run(); tipo.valueProperty().addListener((o,a,b) -> ajustar.run());
-        GridPane grid = new GridPane(); grid.setHgap(12); grid.setVgap(10); grid.addRow(0, new Label("Tipo"), tipo); grid.addRow(1, new Label("Chassi"), chassi); grid.addRow(2, new Label("Marca"), marca); grid.addRow(3, new Label("Modelo"), modelo); grid.addRow(4, new Label("Ano"), ano); grid.addRow(5, new Label("Preço (R$)"), preco); grid.addRow(6, detalheLabel, detalhe);
+        GridPane grid = new GridPane(); grid.setHgap(12); grid.setVgap(10); grid.addRow(0, new Label("Tipo"), tipo); grid.addRow(1, new Label("Chassi"), chassi); grid.addRow(2, new Label("Marca"), marca); grid.addRow(3, new Label("Modelo"), modelo); grid.addRow(4, new Label("Ano"), ano); grid.addRow(5, new Label("Preço (R$)"), preco); grid.addRow(6, detalheLabel, detalhe); grid.addRow(7, new Label("Foto"), campoFoto);
         grid.getColumnConstraints().addAll(new ColumnConstraints(125), new ColumnConstraints(260)); dialog.getDialogPane().setContent(grid);
         dialog.getDialogPane().lookupButton(salvar).disableProperty().bind(chassi.textProperty().isEmpty().or(marca.textProperty().isEmpty()).or(modelo.textProperty().isEmpty()).or(ano.textProperty().isEmpty()).or(preco.textProperty().isEmpty()).or(detalhe.textProperty().isEmpty()));
         dialog.setResultConverter(bt -> {
             if (bt != salvar) return null;
             try {
-                return VeiculoFactory.paraTipo(tipo.getValue()).criar(chassi.getText().trim(), modelo.getText(), marca.getText(),
+                Veiculo veiculo = VeiculoFactory.paraTipo(tipo.getValue()).criar(chassi.getText().trim(), modelo.getText(), marca.getText(),
                         ano.getText(), preco.getText(), detalhe.getText());
-            } catch (IllegalArgumentException ex) { aviso(ex.getMessage()); return null; } // inclui DadosInvalidosException
+                veiculo.setCaminhoImagem(atual == null ? null : atual.getCaminhoImagem());
+                if (removerFoto[0]) veiculo.setCaminhoImagem(null);
+                if (novaFoto[0] != null) {
+                    veiculo.setCaminhoImagem(new ArmazenadorImagens(Path.of("dados", "imagens")).importar(novaFoto[0]));
+                }
+                return veiculo;
+            } catch (IllegalArgumentException | ErroPersistenciaException ex) {
+                aviso(ex.getMessage());
+                return null;
+            } // inclui dados inválidos e falha ao copiar a imagem
         });
         Optional<Veiculo> resultado = dialog.showAndWait();
         resultado.ifPresent(v -> {
@@ -185,6 +281,30 @@ public class App extends Application {
         });
     }
     private void aviso(String mensagem) { new Alert(Alert.AlertType.WARNING, mensagem, ButtonType.OK).showAndWait(); }
+
+    private void abrirFoto(Veiculo veiculo) {
+        Path caminho = ArmazenadorImagens.resolver(veiculo.getCaminhoImagem());
+        if (caminho == null || !Files.isRegularFile(caminho)) {
+            aviso("A imagem deste veículo não foi encontrada na pasta dados/imagens.");
+            return;
+        }
+        Image imagem = new Image(caminho.toUri().toString(), 900, 650, true, true);
+        if (imagem.isError()) {
+            aviso("Não foi possível abrir a imagem selecionada.");
+            return;
+        }
+        ImageView visualizacao = new ImageView(imagem);
+        visualizacao.setPreserveRatio(true);
+        visualizacao.setFitWidth(860);
+        visualizacao.setFitHeight(580);
+        Dialog<Void> dialogo = new Dialog<>();
+        dialogo.setTitle("Foto — " + veiculo.getMarca() + " " + veiculo.getModelo());
+        dialogo.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        dialogo.getDialogPane().setContent(new StackPane(visualizacao));
+        dialogo.getDialogPane().setPrefSize(900, 640);
+        dialogo.showAndWait();
+    }
+
     private void mostrarErro(String titulo, String mensagem) {
         Alert alerta = new Alert(Alert.AlertType.ERROR, mensagem, ButtonType.OK);
         alerta.setTitle("Erro");
