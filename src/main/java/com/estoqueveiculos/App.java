@@ -30,7 +30,9 @@ import java.io.File;
 import java.text.NumberFormat;
 import java.nio.file.Path;
 import java.nio.file.Files;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 /** Aplicação desktop StockMaster; a tela observa alterações do estoque. */
@@ -43,6 +45,7 @@ public class App extends Application {
     private final Label marcas = new Label("0");
     private final TextField busca = new TextField();
     private final NumberFormat moeda = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR"));
+    private final Map<Path, Image> cacheMiniaturas = new HashMap<>();
 
     /** Construtor usado pelo JavaFX ao iniciar a aplicação. */
     public App() {
@@ -162,7 +165,10 @@ public class App extends Application {
 
                 Path caminho = ArmazenadorImagens.resolver(veiculo.getCaminhoImagem());
                 if (caminho != null && Files.isRegularFile(caminho)) {
-                    Image imagem = new Image(caminho.toUri().toString(), 72, 46, true, true, true);
+                    // Carrega a miniatura antes de definir a célula, evitando que ela fique vazia
+                    // até o término de um carregamento em segundo plano.
+                    Image imagem = cacheMiniaturas.computeIfAbsent(caminho,
+                            arquivo -> new Image(arquivo.toUri().toString(), 72, 46, true, true));
                     if (!imagem.isError()) {
                         miniatura.setImage(imagem);
                         setGraphic(miniatura);
@@ -187,6 +193,7 @@ public class App extends Application {
     /** Recarrega a tabela respeitando o texto da busca e atualiza os cards de resumo. */
     private void atualizarTabela() {
         tabela.setItems(FXCollections.observableArrayList(controller.pesquisar(busca.getText())));
+        tabela.refresh();
         quantidade.setText(String.valueOf(controller.listarVeiculos().size()));
         valor.setText(moeda.format(controller.valorTotalEstoque()));
         marcas.setText(String.valueOf(controller.listarMarcas().size()));
