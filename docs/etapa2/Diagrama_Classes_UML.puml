@@ -1,0 +1,174 @@
+@startuml Diagrama_Classes_StockMaster
+title StockMaster — Diagrama de Classes UML
+left to right direction
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+hide empty members
+
+package "Interface gráfica" {
+  class App {
+    - controller: EstoqueController
+    + start(stage: Stage): void
+    + main(args: String[]): void
+  }
+}
+
+package "Controle" {
+  class EstoqueController {
+    - estoqueService: EstoqueService
+    + cadastrarVeiculo(veiculo: Veiculo): void
+    + listarVeiculos(): List~Veiculo~
+    + pesquisar(termo: String): List~Veiculo~
+    + atualizarVeiculo(veiculo: Veiculo): void
+    + removerVeiculo(chassi: String): void
+    + valorTotalEstoque(): double
+  }
+  class VendaController {
+    - vendaService: VendaService
+    + registrarVenda(chassi: String, cliente: Cliente, vendedor: Vendedor): Venda
+    + listarVendas(): List~Venda~
+  }
+}
+
+package "Serviços" {
+  class EstoqueService {
+    - veiculoRepository: IVeiculoRepository
+    - observadores: List~EstoqueObserver~
+    + cadastrarVeiculo(veiculo: Veiculo): void
+    + atualizarVeiculo(veiculo: Veiculo): void
+    + listarVeiculos(): List~Veiculo~
+    + pesquisar(termo: String): List~Veiculo~
+    + valorTotalEstoque(): double
+  }
+  class VendaService {
+    - veiculoRepository: IVeiculoRepository
+    - vendas: List~Venda~
+    - proximoId: int
+    + registrarVenda(chassi: String, cliente: Cliente, vendedor: Vendedor): Venda
+    + listarVendas(): List~Venda~
+  }
+  interface EstoqueObserver {
+    + aoAlterarEstoque(): void
+  }
+  class SessaoUsuario {
+    - vendedorLogado: Vendedor {static}
+    + login(vendedor: Vendedor): void {static}
+    + logout(): void {static}
+    + getVendedorLogado(): Vendedor {static}
+  }
+}
+
+package "Domínio" {
+  abstract class Veiculo {
+    - chassi: String
+    - modelo: String
+    - marca: String
+    - anoFabricacao: int
+    - preco: double
+    - caminhoImagem: String
+    + calcularDesconto(): double {abstract}
+    + getTipo(): String {abstract}
+    + getDescricaoDetalhe(): String {abstract}
+  }
+  class Carro {
+    - numeroPortas: int
+    + calcularDesconto(): double
+    + getTipo(): String
+    + getDescricaoDetalhe(): String
+  }
+  class Caminhonete {
+    - capacidadeCargaKg: double
+    + calcularDesconto(): double
+    + getTipo(): String
+    + getDescricaoDetalhe(): String
+  }
+  class Cliente {
+    - cpf: String
+    - nome: String
+    - telefone: String
+    - email: String
+  }
+  class Vendedor {
+    - id: int
+    - nome: String
+    - login: String
+    - senha: String
+  }
+  class Venda {
+    - id: int
+    - dataVenda: LocalDate
+    - valorFinal: double
+    - veiculo: Veiculo
+    - cliente: Cliente
+    - vendedor: Vendedor
+  }
+}
+
+package "Persistência" {
+  interface IVeiculoRepository {
+    + salvar(veiculo: Veiculo): void
+    + buscarPorChassi(chassi: String): Veiculo
+    + listarTodos(): List~Veiculo~
+    + atualizar(veiculo: Veiculo): void
+    + remover(chassi: String): void
+  }
+  class VeiculoRepositoryMemoria
+  class VeiculoRepositoryArquivo {
+    - arquivo: Path
+  }
+  class VeiculoRepositoryJDBC
+}
+
+package "Criação de veículos" {
+  abstract class VeiculoFactory {
+    + paraTipo(tipo: String): VeiculoFactory {static}
+    + criar(chassi: String, modelo: String, marca: String, ano: String, preco: String, detalhe: String): Veiculo
+    + getTipo(): String {abstract}
+  }
+  class CarroFactory
+  class CaminhoneteFactory
+}
+
+package "Exceções" {
+  class DadosInvalidosException
+  class VeiculoDuplicadoException
+  class VeiculoNaoEncontradoException
+  class ErroPersistenciaException
+}
+
+Veiculo <|-- Carro
+Veiculo <|-- Caminhonete
+VeiculoFactory <|-- CarroFactory
+VeiculoFactory <|-- CaminhoneteFactory
+
+IVeiculoRepository <|.. VeiculoRepositoryMemoria
+VeiculoRepositoryMemoria <|-- VeiculoRepositoryArquivo
+IVeiculoRepository <|.. VeiculoRepositoryJDBC
+
+App --> EstoqueController
+App --|> Application
+EstoqueController --> EstoqueService
+VendaController --> VendaService
+EstoqueService --> IVeiculoRepository
+VendaService --> IVeiculoRepository
+EstoqueService o-- "0..*" EstoqueObserver
+VendaService o-- "0..*" Venda
+Venda "0..*" --> "1" Veiculo : vendido
+Venda "0..*" --> "1" Cliente : comprador
+Venda "0..*" --> "1" Vendedor : responsável
+SessaoUsuario --> Vendedor : sessão atual
+VeiculoFactory ..> Veiculo : cria
+CarroFactory ..> Carro : instancia
+CaminhoneteFactory ..> Caminhonete : instancia
+
+DadosInvalidosException --|> IllegalArgumentException
+VeiculoDuplicadoException --|> RuntimeException
+VeiculoNaoEncontradoException --|> Exception
+ErroPersistenciaException --|> RuntimeException
+
+note bottom of VeiculoRepositoryJDBC
+Implementação JDBC disponível no código;
+a aplicação pode selecionar outra implementação
+por meio da interface IVeiculoRepository.
+end note
+@enduml
